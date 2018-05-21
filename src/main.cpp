@@ -6,23 +6,28 @@
 *************************************************************************/
 
 #include <iostream>
-#include "construct.h"
+#include <algorithm>
+#include <deque>
 using namespace std;
 
-struct A {
-    A() {
-        cout << "A ctor!" << endl;
-    }
-    ~A() {
-        cout << "A dtor!" << endl;
+template <class T>
+struct display {
+    void operator() (const T &x) {
+        cout << x << ' ';
     }
 };
 
 int main() {
-    A *a = (A *)malloc(3 * sizeof(A));
-    for (int i = 0; i < 3; ++i) {
-        STL::construct(a + i);
-    }
-    STL::destroy(a + 1, a + 3);
+    int a[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    deque<int> d(a, a + 9);
+
+    deque<int>::iterator first = d.begin() + 2;
+    deque<int>::iterator last = d.end() - 2;
+    deque<int>::iterator result = d.begin() + 4;
+    cout << *first << ' ' << *last << ' ' << *result << endl;
+
+    copy(first, last, result);
+    for_each(d.begin(), d.end(), display<int>());
+    cout << endl;
     return 0;
 }
