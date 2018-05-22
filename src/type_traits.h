@@ -2,146 +2,40 @@
 #define TINYSTL_TYPE_TRAITS_H_ 
 
 namespace STL {
-    struct __true_type {};
-    struct __false_type {};
 
+    template <class T, T v>
+    struct integral_constant {
+        static constexpr T value = v;
+        typedef T                       value_type;
+        typedef integral_constant<T, v> type;
+        constexpr operator value_type() const { return value; }
+    };
+
+    template <class T, T v>
+    constexpr T integral_constant<T, v>::value;
+
+    typedef integral_constant<bool, true>   true_type;
+    typedef integral_constant<bool, false>  false_type;
+    
     template <class T>
-    struct __type_traits {
-        typedef __false_type    has_trivial_default_constructor;
-        typedef __false_type    has_trivial_copy_constructor;
-        typedef __false_type    has_trivial_assignment_operator;
-        typedef __false_type    has_trivial_destructor;
-        typedef __false_type    is_POD_type;
-    };
-
-    template <>
-    struct __type_traits<bool> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
+    struct has_trivial_default_constructor
+    : public integral_constant<bool, __has_trivial_constructor(T)> {};
     
-    template <>
-    struct __type_traits<char> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-
-    template <>
-    struct __type_traits<signed char> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<unsigned char> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<short> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<unsigned short> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<int> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<unsigned int> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<long> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<unsigned long> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<float> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<double> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    template <>
-    struct __type_traits<long double> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
-    
-    // 针对原生指针
     template <class T>
-    struct __type_traits<T*> {
-        typedef __true_type    has_trivial_default_constructor;
-        typedef __true_type    has_trivial_copy_constructor;
-        typedef __true_type    has_trivial_assignment_operator;
-        typedef __true_type    has_trivial_destructor;
-        typedef __true_type    is_POD_type;
-    };
+    struct has_trivial_copy_constructor
+    : public integral_constant<bool, __has_trivial_copy(T)> {};
     
+    template <class T>
+    struct has_trivial_copy_assign
+    : public integral_constant<bool, __has_trivial_assign(T)> {};
+    
+    template <class T>
+    struct has_trivial_destructor 
+    : public integral_constant<bool, __has_trivial_destructor(T)> {};
+    
+    template <class T>
+    struct is_pod
+    : public integral_constant<bool, __is_pod(T)> {};
     
 } /* namespace STL */ 
 

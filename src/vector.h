@@ -43,13 +43,17 @@ namespace STL {
         bool empty() const { return start == finish; }
 
         // 修改容器
+        void push_back(const T &x);
+        void pop_back();
+        iterator erase(iterator pos);
 
     protected:
+        void fill_initialize(size_type n, const value_type &x);
+        iterator allocate_and_fill(size_type n, const value_type &x);
         void deallocate() {
             if (start)  data_allocator::deallocate(start, end_of_storage - start);
         }
-        void fill_initialize(size_type n, const value_type &x);
-        iterator allocate_and_fill(size_type n, const value_type &x);
+        void insert_aux(iterator pos, const value_type &x);
     };
 
     // 析构函数
@@ -58,6 +62,38 @@ namespace STL {
         STL::destroy(start, finish);
         deallocate();   // protected成员函数
     }
+
+    // 将元素插入尾端
+    template <class T, class Alloc>
+    void vector<T, Alloc>::push_back(const T &x) {
+        if (finish != end_of_storage) {
+            STL::construct(finish, x);
+            ++finish;
+        } else {
+            insert_aux(finish, x);
+        }
+    }
+
+    // 删除尾端元素
+    template <class T, class Alloc>
+    void vector<T, Alloc>::pop_back() {
+        --finish;
+        destroy(finish);
+    }
+
+    // 清除某位置上元素
+    template <class T, class Alloc>
+    typename vector<T, Alloc>::iterator 
+    vector<T, Alloc>::erase(iterator pos) {
+        if (pos + 1 != finish) {
+            STL::copy(pos + 1, finish, pos);
+        }
+        --finish;
+        destroy(finish);
+        return pos;
+    }
+
+    /********** protected member function **********/
 
     // 填充并初始化
     template <class T, class Alloc>
@@ -76,6 +112,48 @@ namespace STL {
         return result;
     }
 
+    // 在pos处插入元素x
+    template <class T, class Alloc>
+    void vector<T, Alloc>::insert_aux(iterator pos, const value_type &x) {
+        if (finish != end_of_storage) { // 有备用空间 
+            STL::construct(finish, *(finish - 1)); // 在备用空间起始处，用当前最后一个元素构造初值
+            ++finish;
+            STL::copy_backward(pos, finish - 2, finish - 1);
+            *pos = x;
+        } else {    // 无备用空间
+            // 若原大小为0，则配置1个元素大小
+            // 否则，配置为原大小的2倍
+            const size_type old_size = size();
+            const size_type len = old_size != 0 ? 2 * old_size : 1;
+
+            iterator new_start = data_allocator::allocate(len);
+            iterator new_finish = new_start;
+            try {
+                // 将原数据pos之前的内容拷贝到新空间
+                new_finish = STL::uninitialized_copy(start, pos, new_start);
+                // 为插入元素设初值x
+                STL::construct(new_finish, x);
+                ++new_finish;
+                // 将原数据pos之后的内容拷贝到新空间
+                new_finish = STL::uninitialized_copy(pos, finish, new_finish);
+            }
+            catch(...) {
+                // commit or rollback
+                STL::destroy(new_start, new_finish);
+                data_allocator::deallocate(new_start, len);
+                throw;
+            }
+
+            // 析构原vector
+            STL::destroy(start, finish);
+            deallocate();
+
+            // 调整迭代器，指向新vector
+            start = new_start;
+            finish = new_finish;
+            end_of_storage = new_start + len;
+        }
+    }
 
 } /* namespace STL */
 

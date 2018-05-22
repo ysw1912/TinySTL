@@ -28,15 +28,15 @@ namespace STL {
     // destory版本二
     template <class ForwardIterator>
     void destroy(ForwardIterator first, ForwardIterator last) {
-        typedef typename __type_traits<ForwardIterator>::has_trivial_destructor trivial_destructor; 
-        _destory(first, last, trivial_destructor());
+        typedef typename STL::has_trivial_destructor<ForwardIterator> trivial_dtor;
+        _destory(first, last, trivial_dtor());
     }
 
     template <class ForwardIterator>
-    inline void _destory(ForwardIterator, ForwardIterator, __true_type) {}
+    inline void _destory(ForwardIterator, ForwardIterator, STL::true_type) {}
 
     template <class ForwardIterator>
-    inline void _destory(ForwardIterator first, ForwardIterator last, __false_type) {
+    inline void _destory(ForwardIterator first, ForwardIterator last, STL::false_type) {
         for ( ; first < last; ++first) {
             destroy(&*first);
         }

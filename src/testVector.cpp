@@ -9,15 +9,24 @@
 
 using namespace std;
 
+struct foo {
+    int a;
+    int b;
+
+    foo() { cout << "ctor" << endl; }
+    ~foo() { cout << "dtor" << endl; }
+};
+
 int main() {
-    int n = 9;
-    STL::vector<int> v(n, 3);
-    STL::vector<int> v2(v);
-    for (int i = 0; i < 9; ++i) {
-        cout << v2[i] << ' ';
+    STL::vector<foo> v;
+    for (int i = 0; i < 6; ++i) {
+        foo t;
+        t.a = i;    t.b = i + 1;
+        v.push_back(t);
+    }
+    for (int i = 0; i < 6; ++i) {
+        cout << v[i].a << ' ' << v[i].b << endl;
     }
     cout << endl;
-    cout << v2.capacity() << endl;
-    v.~vector();
     return 0;
 }

@@ -34,26 +34,26 @@ namespace STL {
 
     // 指针所指对象具备默认赋值操作符
     template <class T>
-    inline T* __copy_t(T* first, T* last, T* result, STL::__true_type) {
+    inline T* __copy_t(T* first, T* last, T* result, STL::true_type) {
         memmove(result, first, sizeof(T) * (last - first));
-        return result + last - first;
+        return result + (last - first);
     }
 
     // 指针所指对象不具备默认赋值操作符
     template <class T>
-    inline T* __copy_t(T* first, T* last, T* result, STL::__false_type) {
+    inline T* __copy_t(T* first, T* last, T* result, STL::false_type) {
         // 原生指针是RandomAccessIterator，交给__copy_d()
         return __copy_d(first, last, result, reinterpret_cast<ptrdiff_t *>(0));
     }
 
     template <class T>
-    inline T* __copy_t(const T* first, const T* last, T* result, STL::__true_type) {
+    inline T* __copy_t(const T* first, const T* last, T* result, STL::true_type) {
         memmove(result, first, sizeof(T) * (last - first));
-        return result + last - first;
+        return result + (last - first);
     }
 
     template <class T>
-    inline T* __copy_t(const T* first, const T* last, T* result, STL::__false_type) {
+    inline T* __copy_t(const T* first, const T* last, T* result, STL::false_type) {
         // 原生指针是RandomAccessIterator，交给__copy_d()
         return __copy_d(first, last, result, reinterpret_cast<ptrdiff_t *>(0));
     }
@@ -91,7 +91,7 @@ namespace STL {
     struct _copy<T*, T*> {
         T* operator()(T* first, T* last, T* result) {
             // 指针所指是否具有默认的赋值操作符
-            typedef typename STL::__type_traits<T>::has_trivial_assignment_operator t;
+            typedef typename STL::has_trivial_copy_assign<T> t;
             return __copy_t(first, last, result, t());
         }
     };
@@ -100,7 +100,7 @@ namespace STL {
     template <class T>
     struct _copy<const T*, T*> {
         T* operator()(const T* first, const T* last, T* result) {
-            typedef typename STL::__type_traits<T>::has_trivial_assignment_operator t;
+            typedef typename STL::has_trivial_copy_assign<T> t;
             return __copy_t(first, last, result, t());
         }
     };
@@ -111,6 +111,83 @@ namespace STL {
     template <class InputIterator, class OutputIterator>
     inline OutputIterator copy(InputIterator first, InputIterator last, OutputIterator result) {
         return _copy<InputIterator, OutputIterator>()(first, last, result);
+    }
+    
+    // copy_backward
+    
+    /********** __copy_backward() **********/
+    
+    // first是BidirectionalIterator
+    template <class BidirectionalIterator1, class BidirectionalIterator2>
+    inline BidirectionalIterator2 __copy_backward(BidirectionalIterator1 first, BidirectionalIterator1 last, BidirectionalIterator2 result, STL::bidirectional_iterator_tag) {
+        while (last != first) {
+            *(--result) = *(--last);
+        }
+        return result;
+    }
+    
+    /********** __copy_backward_t() **********/
+
+    // 指针所指对象具备默认赋值操作符
+    template <class T>
+    inline T* __copy_backward_t(T* first, T* last, T* result, STL::true_type) {
+        memmove(result - (last - first), first, sizeof(T) * (last - first));
+        return result - (last - first);
+    }
+
+    // 指针所指对象不具备默认赋值操作符
+    template <class T>
+    inline T* __copy_backward_t(T* first, T* last, T* result, STL::false_type) {
+        // 原生指针是RandomAccessIterator，交给__copy_backward()
+        return __copy_backward(first, last, result, reinterpret_cast<ptrdiff_t *>(0));
+    }
+
+    template <class T>
+    inline T* __copy_backward_t(const T* first, const T* last, T* result, STL::true_type) {
+        memmove(result - (last - first), first, sizeof(T) * (last - first));
+        return result - (last - first);
+    }
+
+    template <class T>
+    inline T* __copy_backward_t(const T* first, const T* last, T* result, STL::false_type) {
+        // 原生指针是RandomAccessIterator，交给__copy_backward()
+        return __copy_backward(first, last, result, reinterpret_cast<ptrdiff_t *>(0));
+    }
+
+    /********** _copy_backward() **********/
+    
+    // 完全泛化，first的迭代器类型必须是BidirectionalIterator
+    template <class BidirectionalIterator1, class BidirectionalIterator2>
+    struct _copy_backward {
+        BidirectionalIterator2 operator()(BidirectionalIterator1 first, BidirectionalIterator1 last, BidirectionalIterator2 result) {
+            return __copy_backward(first, last, result, STL::iterator_category(first));
+        }
+    };
+    
+    // 偏特化T*, T*
+    template <class T>
+    struct _copy_backward<T*, T*> {
+        T* operator()(T* first, T* last, T* result) {
+            // 指针所指是否具有默认的赋值操作符
+            typedef typename STL::has_trivial_copy_assign<T> t;
+            return __copy_backward_t(first, last, result, t());
+        }
+    };
+    
+    // 偏特化const T*, T*
+    template <class T>
+    struct _copy_backward<const T*, T*> {
+        T* operator()(const T* first, const T* last, T* result) {
+            typedef typename STL::has_trivial_copy_assign<T> t;
+            return __copy_backward_t(first, last, result, t());
+        }
+    };
+    /********** copy_backward() **********/
+    
+    // 完全泛化 
+    template <class BidirectionalIterator1, class BidirectionalIterator2>
+    inline BidirectionalIterator2 copy_backward(BidirectionalIterator1 first, BidirectionalIterator1 last, BidirectionalIterator2 result) {
+        return _copy_backward<BidirectionalIterator1, BidirectionalIterator2>()(first, last, result);    
     }
 
 } /* namespace STL */ 
