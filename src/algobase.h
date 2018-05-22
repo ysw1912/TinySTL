@@ -6,7 +6,15 @@
 #include "type_traits.h"
 
 namespace STL {
-    
+    // fill 
+    // 将[first, last)内所有元素填入新值x
+    template <class ForwardIterator, class T>
+    inline void fill(ForwardIterator first, ForwardIterator last, const T &x) {
+        for ( ; first != last; ++first) {
+            *first = x;
+        }
+    }        
+
     // fill_n
     // 将first开始的n个元素填入新值x，返回的迭代器指向被填入的最后一个元素的下一个位置
     template <class OutputIterator, class Size, class T>

@@ -60,6 +60,51 @@ namespace STL {
 
     /***************** uninitialized_fill ******************/
     
+    // 函数声明 
+    template <class ForwardIterator, class T, class T1>
+    inline void 
+    _uninit_fill(ForwardIterator first, ForwardIterator last, const T &x, T1*);
+    
+    template <class ForwardIterator, class T>
+    inline void 
+    __uninit_fill(ForwardIterator first, ForwardIterator last, const T &x, STL::true_type);
+    
+    template <class ForwardIterator, class T>
+    inline void 
+    __uninit_fill(ForwardIterator first, ForwardIterator last, const T &x, STL::false_type);
+    
+    // uninitialized_fill()
+    template <class ForwardIterator, class T>
+    inline void 
+    uninitialized_fill(ForwardIterator first, ForwardIterator last, const T &x) {
+        _uninit_fill(first, last, x, STL::value_type(first));
+    }
+
+    // 判断first指向的value_type是否为POD
+    template <class ForwardIterator, class T, class T1>
+    inline void 
+    _uninit_fill(ForwardIterator first, ForwardIterator last, const T &x, T1*) {
+        typedef typename STL::is_pod<T1> is_pod;
+        __uninit_fill(first, last, x, is_pod());
+    }
+    
+    // 是POD
+    template <class ForwardIterator, class T>
+    inline void 
+    __uninit_fill(ForwardIterator first, ForwardIterator last, const T &x, STL::true_type) {
+        STL::fill(first, last, x);
+    }
+
+    // 不是POD
+    template <class ForwardIterator, class T>
+    inline void 
+    __uninit_fill(ForwardIterator first, ForwardIterator last, const T &x, STL::false_type) {
+        ForwardIterator cur = first;
+        for ( ; cur != last; ++cur) {
+            STL::construct(&*cur, x);
+        }
+    }
+
     /**************** uninitialized_fill_n *****************/
 
     // 函数声明
@@ -90,14 +135,14 @@ namespace STL {
         return __uninit_fill_n(first, n, x, is_pod());
     }
     
-    // 是trivial
+    // 是POD
     template <class ForwardIterator, class Size, class T>
     inline ForwardIterator 
     __uninit_fill_n(ForwardIterator first, Size n, const T &x, STL::true_type) {
         return STL::fill_n(first, n, x);
     }
     
-    // 不是trivial
+    // 不是POD
     template <class ForwardIterator, class Size, class T>
     inline ForwardIterator 
     __uninit_fill_n(ForwardIterator first, Size n, const T &x, STL::false_type) {
@@ -109,4 +154,5 @@ namespace STL {
     }
 
 } /* namespace STL */ 
+
 #endif 
