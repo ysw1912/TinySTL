@@ -45,7 +45,7 @@ namespace STL {
 
         for (;;) {
             my_malloc_handler = malloc_alloc_oom_handler;
-            if (0 == my_malloc_handler) { THROW_BAD_ALLOC; }
+            if (0 == my_malloc_handler) { THROW_BAD_ALLOC(); }
             (*my_malloc_handler)(); // 调用处理函数
             result = malloc(n);     // 再次尝试分配内存
             if (result) return result;

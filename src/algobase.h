@@ -6,6 +6,18 @@
 #include "type_traits.h"
 
 namespace STL {
+    
+    // fill_n
+    // 将first开始的n个元素填入新值x，返回的迭代器指向被填入的最后一个元素的下一个位置
+    template <class OutputIterator, class Size, class T>
+    inline OutputIterator fill_n(OutputIterator first, Size n, const T &value) {
+        for ( ; n > 0; --n, ++first) {
+            *first = value;
+        }
+        return first;
+    }
+
+    // copy 极其复杂
 
     /********** __copy_d() **********/
 
