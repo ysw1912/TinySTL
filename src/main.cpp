@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
-#include <deque>
+#include <vector>
 using namespace std;
 
 template <class T>
@@ -18,16 +18,10 @@ struct display {
 };
 
 int main() {
-    int a[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    deque<int> d(a, a + 9);
-
-    deque<int>::iterator first = d.begin() + 2;
-    deque<int>::iterator last = d.end() - 2;
-    deque<int>::iterator result = d.begin() + 4;
-    cout << *first << ' ' << *last << ' ' << *result << endl;
-
-    copy(first, last, result);
-    for_each(d.begin(), d.end(), display<int>());
-    cout << endl;
+    vector<int> v;
+    for (int i = 1; i < 5; ++i)
+        v.push_back(i + 1);
+    v.insert(v.begin() + 1, 5, 9);
+    std::for_each(v.begin(), v.end(), display<int>());
     return 0;
 }

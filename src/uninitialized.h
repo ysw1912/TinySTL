@@ -14,7 +14,7 @@ namespace STL {
     inline ForwardIterator 
     _uinit_copy(InputIterator first, InputIterator last, ForwardIterator result, T*);
 
-        template <class InputIterator, class ForwardIterator>
+    template <class InputIterator, class ForwardIterator>
     ForwardIterator 
     __uninit_copy(InputIterator first, InputIterator last, ForwardIterator result, STL::true_type);
     

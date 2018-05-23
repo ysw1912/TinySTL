@@ -70,6 +70,39 @@ namespace STL {
     value_type(const Iter&) {
         return static_cast<typename iterator_traits<Iter>::value_type *>(0);
     }
+    
+    // distance()
+    template <class InputIterator>
+    inline typename iterator_traits<InputIterator>::difference_type 
+    _distance(InputIterator first, InputIterator last, input_iterator_tag) {
+        typename iterator_traits<InputIterator>::difference_type n = 0;
+        while (first != last) {
+            ++first;
+            ++n;
+        }
+        return n;
+    }
+
+    template <class RandomAccessIterator>
+    inline typename iterator_traits<RandomAccessIterator>::difference_type 
+    _distance(RandomAccessIterator first, RandomAccessIterator last, random_access_iterator_tag) {
+        return last - first;
+    }
+
+    /** 
+     **  @brief 通用指针算数操作
+     **  @param  first   输入迭代器
+     **  @param  last    输入迭代器
+     **  @return  它们之间的距离
+     **
+     **  对于random access iterator，只需要O(1)
+     **/
+    template <class InputIterator>
+    inline typename iterator_traits<InputIterator>::difference_type 
+    distance(InputIterator first, InputIterator last) {
+        typedef typename iterator_traits<InputIterator>::iterator_category category;
+        return _distance(first, last, category());
+    }
 
 } /* namespace STL */
 

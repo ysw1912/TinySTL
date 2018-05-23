@@ -9,34 +9,17 @@
 #include <cstring>
 using namespace std;
 
-struct foo {
-    int a;
-    int b;
-    char *s;
-
-    ~foo() {
-        if (s) {
-            delete[] s;
-            cout << "delete[] s" << endl;
-        }
-        cout << "析构" << endl;
-    }
-};
-
-int main() {
-    char a[] = "ysw";
-    STL::vector<foo> v;
-    for (int i = 0; i < 6; ++i) {
-        foo t;
-        t.a = i;    t.b = i + 1;
-        t.s = new char[4];
-        strcpy(t.s, a);
-        v.push_back(t);
-    }
-    for (int i = 0; i < 6; ++i) {
-        cout << v[i].a << ' ' << v[i].b << ' ' << v[i].s << endl;
+template <class T>
+void Print(const STL::vector<T> &v) {
+    for (size_t i = 0; i < v.size(); ++i) {
+        cout << v[i] << ' ';
     }
     cout << endl;
-    v.~vector();
+}
+
+int main() {
+    STL::vector<int> v1 = {1, 2, 3, 4, 5};
+    v1.insert(v1.begin() + 1, (size_t)5, 9);
+    Print<int>(v1);
     return 0;
 }
