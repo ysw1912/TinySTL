@@ -150,7 +150,7 @@ namespace STL {
         }
         
         /** 
-         *  @brief  清楚[first, last)中的所有元素
+         *  @brief  清除[first, last)中的所有元素
          *  @return  返回first迭代器
          *
          *  erase()并不会使capacity减少
@@ -163,7 +163,7 @@ namespace STL {
         }
 
         /**
-         *  @brief  清楚pos位置上的元素
+         *  @brief  清除pos位置上的元素
          *  @return  返回pos迭代器
          */ 
         iterator erase(iterator pos) {
@@ -174,6 +174,13 @@ namespace STL {
             destroy(finish);
             return pos;
         }
+
+        /**
+         *  @brief  清除vector中所有元素
+         *
+         *  clear()并不会使capacity减少
+         */ 
+        void clear() { erase(first, finish); }
     };
 
     /********** protected member function **********/

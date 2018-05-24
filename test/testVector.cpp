@@ -4,7 +4,7 @@
     > E-mail: 793377164@qq.com
     > Created Time: 2018-05-22
 *************************************************************************/
-#include "vector.h"
+#include "../src/vector.h"
 #include <iostream>
 #include <string>
 using namespace std;
