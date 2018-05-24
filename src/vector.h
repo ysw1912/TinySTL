@@ -148,9 +148,23 @@ namespace STL {
             --finish;
             destroy(finish);
         }
+        
+        /** 
+         *  @brief  清楚[first, last)中的所有元素
+         *  @return  返回first迭代器
+         *
+         *  erase()并不会使capacity减少
+         */ 
+        iterator erase(iterator first, iterator last) {
+            iterator i = STL::copy(last, finish, first);
+            STL::destroy(i, finish);
+            finish = finish - (last - first);
+            return first;
+        }
 
         /**
          *  @brief  清楚pos位置上的元素
+         *  @return  返回pos迭代器
          */ 
         iterator erase(iterator pos) {
             if (pos + 1 != finish) {
