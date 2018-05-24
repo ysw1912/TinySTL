@@ -40,6 +40,12 @@ namespace STL {
         // 定义在下
         void fill_insert(iterator pos, size_type n, const value_type &x);
 
+        template <class InputIterator>
+        void range_insert(iterator pos, InputIterator first, InputIterator last, STL::input_iterator_tag);
+
+        template <class ForwardIterator>
+        void range_insert(iterator pos, ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag);
+
         template <class Integer>
         void insert_dispatch(iterator pos, Integer n, Integer x, std::true_type) {
             fill_insert(pos, n, x);
@@ -238,17 +244,86 @@ namespace STL {
                 value_type x_copy = x;
                 // 插入点之后的现有元素个数
                 const size_type elems_after = finish - pos;
-                iterator old_finish(finish);
+                // old_finish变量在源码中有使用
+                // iterator old_finish(finish);
                 if (elems_after > n) {  // "pos后元素个数"大于"新增元素个数"
-                    STL::uninitialized_copy(finish - n, finish, finish);
-                    finish += n;
-                    STL::copy_backward(pos, old_finish - n, old_finish);
+                    STL::copy_backward(pos, finish, finish + n);
                     STL::fill(pos, pos + n, x_copy);
+                    finish += n;
+                    // 以下为源码方法
+                    // STL::uninitialized_copy(finish - n, finish, finish);
+                    // finish += n;
+                    // STL::copy_backward(pos, old_finish - n, old_finish);
+                    // STL::fill(pos, pos + n, x_copy);
                 } else {    // "pos后元素个数"小于等于"新增元素个数"
-                    finish = STL::uninitialized_fill_n(finish, n - elems_after, x_copy);
-                    STL::uninitialized_copy(pos, old_finish, finish);
-                    finish += elems_after;
-                    STL::fill(pos, old_finish, x_copy);
+                    STL::uninitialized_copy(pos, finish, pos + n);
+                    STL::fill(pos, pos + n, x_copy);
+                    finish += n;
+                    // 以下为源码方法
+                    // finish = STL::uninitialized_fill_n(finish, n - elems_after, x_copy);
+                    // STL::uninitialized_copy(pos, old_finish, finish);
+                    // finish += elems_after;
+                    // STL::fill(pos, old_finish, x_copy);
+                }
+            } else {    // "备用空间"小于"新增元素个数"
+                // 新长度 = 2倍旧长度 or 旧长度 + 新增元素个数
+                const size_type old_size = size();
+                const size_type len = old_size + (old_size > n ? old_size : n);
+                // 配置新的vector空间
+                iterator new_start(data_allocator::allocate(len));
+                iterator new_finish(new_start);
+                try {
+                    new_finish = iterator();
+                    // 将旧vector插入点之前的元素复制
+                    new_finish = STL::uninitialized_copy(start, pos, new_start);
+                    // 将新增元素(n个x)填入vector
+                    new_finish = STL::uninitialized_fill_n(new_finish, n, x);
+                    // 将旧vector插入点之后的元素复制
+                    new_finish = STL::uninitialized_copy(pos, finish, new_finish);
+                } catch (...) {
+                    // commit or rollback
+                    if (!new_finish)
+                        STL::destroy(new_start, new_start + (pos - start));
+                    else 
+                        STL::destroy(new_start, new_finish);
+                    data_allocator::deallocate(new_start, len);
+                    throw;
+                }
+                // 释放旧vector
+                STL::destroy(start, finish);
+                deallocate();
+                // 调整标记
+                start = new_start;
+                finish = new_finish;
+                end_of_storage = start + len;
+            }
+        }
+    }
+
+    template <class T, class Alloc>
+    template <class InputIterator>
+    void vector<T, Alloc>::range_insert(iterator pos, InputIterator first, InputIterator last, STL::input_iterator_tag) {
+        for ( ; first != last; ++first) {
+            pos = insert(pos, *first);
+            ++pos;
+        }    
+    }
+
+    template <class T, class Alloc>
+    template <class ForwardIterator>
+    void vector<T, Alloc>::range_insert(iterator pos, ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) {
+        if (first != last) {
+            const size_type n = STL::distance(first, last); // 新增元素个数
+            if (size_type(end_of_storage - finish) >= n) {
+                const size_type elems_after = finish - pos;
+                if (elems_after > n) {  // "pos后元素个数"大于"新增元素个数"
+                    STL::copy_backward(pos, finish, finish + n);
+                    STL::copy(first, last, pos);
+                    finish += n;
+                } else {    // "pos后元素个数"小于等于"新增元素个数"
+                    STL::uninitialized_copy(pos, finish, pos + n);
+                    STL::copy(first, last, pos);
+                    finish += n;
                 }
             } else {    // "备用空间"小于"新增元素个数"
                 // 新长度 = 2倍旧长度 or 旧长度 + 新增元素个数

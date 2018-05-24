@@ -147,7 +147,7 @@ namespace STL {
     template <class T>
     inline T* __copy_backward_t(T* first, T* last, T* result, STL::false_type) {
         // 原生指针是RandomAccessIterator，交给__copy_backward()
-        return __copy_backward(first, last, result, reinterpret_cast<ptrdiff_t *>(0));
+        return __copy_backward(first, last, result, STL::random_access_iterator_tag());
     }
 
     template <class T>
@@ -159,7 +159,7 @@ namespace STL {
     template <class T>
     inline T* __copy_backward_t(const T* first, const T* last, T* result, STL::false_type) {
         // 原生指针是RandomAccessIterator，交给__copy_backward()
-        return __copy_backward(first, last, result, reinterpret_cast<ptrdiff_t *>(0));
+        return __copy_backward(first, last, result, STL::random_access_iterator_tag());
     }
 
     /********** _copy_backward() **********/

@@ -6,20 +6,37 @@
 *************************************************************************/
 #include "vector.h"
 #include <iostream>
-#include <cstring>
+#include <string>
 using namespace std;
+
+struct aaa {
+    int a;
+    string s;
+};
+
+ostream& operator<< (ostream &os, const aaa &x) {
+    os << x.a << ' ' << x.s;
+    return os;
+}
 
 template <class T>
 void Print(const STL::vector<T> &v) {
+    cout << "capacity: " << v.capacity() << "  { ";
     for (size_t i = 0; i < v.size(); ++i) {
         cout << v[i] << ' ';
     }
-    cout << endl;
+    cout << '}' << endl;
 }
 
 int main() {
-    STL::vector<int> v1 = {1, 2, 3, 4, 5};
-    v1.insert(v1.begin() + 1, (size_t)5, 9);
-    Print<int>(v1);
+    STL::vector<aaa> v1;
+    for (int i = 0; i < 5; ++i) {
+        aaa t = {i + 1, "yyf"};
+        v1.push_back(t);
+        Print<aaa>(v1);
+    }
+    aaa t = {0, "ysw"};
+    v1.insert(v1.begin() + 1, 3, t);
+    Print<aaa>(v1);
     return 0;
 }
