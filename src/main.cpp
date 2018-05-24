@@ -19,9 +19,9 @@ struct display {
 
 int main() {
     vector<int> v;
-    for (int i = 1; i < 5; ++i)
+    for (int i = 0; i < 5; ++i)
         v.push_back(i + 1);
-    v.insert(v.begin() + 1, 5, 9);
+    v.insert(v.begin() + 1, v.begin() + 2, v.end());
     std::for_each(v.begin(), v.end(), display<int>());
     return 0;
 }

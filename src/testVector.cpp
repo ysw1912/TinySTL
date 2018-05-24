@@ -36,7 +36,7 @@ int main() {
         Print<aaa>(v1);
     }
     aaa t = {0, "ysw"};
-    v1.insert(v1.begin() + 1, 3, t);
+    v1.insert(v1.begin() + 1, v1.begin() + 2, v1.end());
     Print<aaa>(v1);
     return 0;
 }

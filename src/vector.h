@@ -129,40 +129,38 @@ namespace STL {
             insert_dispatch(pos, first, last, is_integral());
         }
 
-        void push_back(const T &x);
-        void pop_back();
-        iterator erase(iterator pos);
+        /**
+         *  @brief  将x插入vector尾端
+         */ 
+        void push_back(const T &x) {
+            if (finish != end_of_storage) {
+                STL::construct(finish, x);
+                ++finish;
+            } else {
+                insert_aux(finish, x);
+            }
+        }
+
+        /**
+         *  @brief  删除vector尾端元素
+         */ 
+        void pop_back() {
+            --finish;
+            destroy(finish);
+        }
+
+        /**
+         *  @brief  清楚pos位置上的元素
+         */ 
+        iterator erase(iterator pos) {
+            if (pos + 1 != finish) {
+                STL::copy(pos + 1, finish, pos);
+            }
+            --finish;
+            destroy(finish);
+            return pos;
+        }
     };
-
-    // 将元素插入尾端
-    template <class T, class Alloc>
-    void vector<T, Alloc>::push_back(const T &x) {
-        if (finish != end_of_storage) {
-            STL::construct(finish, x);
-            ++finish;
-        } else {
-            insert_aux(finish, x);
-        }
-    }
-
-    // 删除尾端元素
-    template <class T, class Alloc>
-    void vector<T, Alloc>::pop_back() {
-        --finish;
-        destroy(finish);
-    }
-
-    // 清除某位置上元素
-    template <class T, class Alloc>
-    typename vector<T, Alloc>::iterator 
-    vector<T, Alloc>::erase(iterator pos) {
-        if (pos + 1 != finish) {
-            STL::copy(pos + 1, finish, pos);
-        }
-        --finish;
-        destroy(finish);
-        return pos;
-    }
 
     /********** protected member function **********/
 
@@ -304,7 +302,7 @@ namespace STL {
     template <class InputIterator>
     void vector<T, Alloc>::range_insert(iterator pos, InputIterator first, InputIterator last, STL::input_iterator_tag) {
         for ( ; first != last; ++first) {
-            pos = insert(pos, *first);
+            insert_aux(pos, *first);
             ++pos;
         }    
     }
@@ -333,19 +331,15 @@ namespace STL {
                 iterator new_start(data_allocator::allocate(len));
                 iterator new_finish(new_start);
                 try {
-                    new_finish = iterator();
                     // 将旧vector插入点之前的元素复制
                     new_finish = STL::uninitialized_copy(start, pos, new_start);
                     // 将新增元素(n个x)填入vector
-                    new_finish = STL::uninitialized_fill_n(new_finish, n, x);
+                    new_finish = STL::uninitialized_copy(first, last, new_finish);
                     // 将旧vector插入点之后的元素复制
                     new_finish = STL::uninitialized_copy(pos, finish, new_finish);
                 } catch (...) {
                     // commit or rollback
-                    if (!new_finish)
-                        STL::destroy(new_start, new_start + (pos - start));
-                    else 
-                        STL::destroy(new_start, new_finish);
+                    STL::destroy(new_start, new_finish);
                     data_allocator::deallocate(new_start, len);
                     throw;
                 }
