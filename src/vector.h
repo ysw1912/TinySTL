@@ -11,12 +11,12 @@ namespace STL {
     template <class T, class Alloc = STL::pool_alloc>
     class vector {
     public:
-        typedef T           value_type;
-        typedef T*          pointer;
-        typedef T*          iterator;
-        typedef T&          reference;
-        typedef size_t      size_type;
-        typedef ptrdiff_t   difference_type;
+        using value_type        = T;
+        using pointer           = T*;
+        using iterator          = T*;
+        using reference         = T&;
+        using size_type         = size_t;
+        using difference_type   = ptrdiff_t;
 
     protected:
         typedef STL::allocator<T, Alloc> data_allocator;
@@ -180,7 +180,7 @@ namespace STL {
          *
          *  clear()并不会使capacity减少
          */ 
-        void clear() { erase(first, finish); }
+        void clear() { erase(start, finish); }
     };
 
     /********** protected member function **********/

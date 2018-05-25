@@ -40,5 +40,13 @@ int main() {
     Print<aaa>(v1);
     v1.erase(v1.begin() + 2, v1.begin() + 4);
     Print<aaa>(v1);
+
+    STL::vector<int> v2{1, 2, 3, 4, 5};
+    Print<int>(v2);
+    for (int i = 0; i < v2.size(); ++i) {
+        v2[i] = -v2[i];
+    }
+    v2.front() = -v2.front();
+    Print<int>(v2);
     return 0;
 }
