@@ -19,7 +19,7 @@ namespace STL {
         using difference_type   = ptrdiff_t;
 
     protected:
-        typedef STL::allocator<T, Alloc> data_allocator;
+        using data_allocator    = STL::allocator<T, Alloc>;
         iterator start;           // 使用空间的头
         iterator finish;          // 使用空间的尾
         iterator end_of_storage;  // 可用空间的尾
