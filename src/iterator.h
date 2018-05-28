@@ -25,37 +25,37 @@ namespace STL {
     // traits 
     template <class Iter>
     struct iterator_traits {
-        typedef typename Iter::iterator_category    iterator_category;
-        typedef typename Iter::value_type           value_type;
-        typedef typename Iter::difference_type      difference_type;
-        typedef typename Iter::pointer              pointer;
-        typedef typename Iter::reference            reference;
+        using iterator_category = typename Iter::iterator_category;
+        using value_type        = typename Iter::value_type;
+        using pointer           = typename Iter::pointer;
+        using reference         = typename Iter::reference;
+        using difference_type   = typename Iter::difference_type;
     }; 
 
     // 针对原生指针的traits
     template <class T>
     struct iterator_traits<T *> {
-        typedef random_access_iterator_tag  iterator_category;
-        typedef T                           value_type;
-        typedef ptrdiff_t                   difference_type;
-        typedef T*                          pointer;
-        typedef T&                          reference;
+        using iterator_category = random_access_iterator_tag;
+        using value_type        = T;
+        using pointer           = T*;
+        using reference         = T&;
+        using difference_type   = ptrdiff_t;
     };
 
     // 针对原生const指针的traits
     template <class T>
     struct iterator_traits<const T *> {
-        typedef random_access_iterator_tag  iterator_category;
-        typedef T                           value_type;
-        typedef ptrdiff_t                   difference_type;
-        typedef const T*                    pointer;
-        typedef const T&                    reference;
+        using iterator_category = random_access_iterator_tag;
+        using value_type        = T;
+        using pointer           = const T*;
+        using reference         = const T&;
+        using difference_type   = ptrdiff_t;
     };
 
     template <class Iter>
     inline typename iterator_traits<Iter>::iterator_category 
     iterator_category(const Iter&) {
-        typedef typename iterator_traits<Iter>::iterator_category category;
+        using category = typename iterator_traits<Iter>::iterator_category;
         return category();
     }
 
@@ -71,7 +71,34 @@ namespace STL {
         return static_cast<typename iterator_traits<Iter>::value_type *>(0);
     }
     
-    // distance()
+    // 以下为整组advance()函数
+    template <class InputIterator, class Distance>
+    inline void _advance(InputIterator& i, Distance n, input_iterator_tag) {
+       while (n--)  ++i;
+    } 
+
+    template <class BidirectionalIterator, class Distance>
+    inline void _advance(BidirectionalIterator& i, Distance n, bidirectional_iterator_tag) {
+        if (n > 0)
+            while (n--) ++i;
+        else 
+            while (n++) --i;
+    }
+    
+    template <class RandomAccessIterator, class Distance>
+    inline void _advance(RandomAccessIterator& i, Distance n, random_access_iterator_tag) {
+        i += n;
+    }
+
+    /**
+     *  @brief  将迭代器i增加n
+     */ 
+    template <class InputIterator, class Distance>
+    inline void advance(InputIterator& i, Distance n) {
+        _advance(i, n, iterator_category(i));
+    }
+
+    // 以下为整组distance()函数
     template <class InputIterator>
     inline typename iterator_traits<InputIterator>::difference_type 
     _distance(InputIterator first, InputIterator last, input_iterator_tag) {
@@ -90,17 +117,12 @@ namespace STL {
     }
 
     /** 
-     **  @brief 通用指针算数操作
-     **  @param  first   输入迭代器
-     **  @param  last    输入迭代器
-     **  @return  它们之间的距离
-     **
-     **  对于random access iterator，只需要O(1)
+     **  @brief  计算迭代器first到last的距离
      **/
     template <class InputIterator>
     inline typename iterator_traits<InputIterator>::difference_type 
     distance(InputIterator first, InputIterator last) {
-        typedef typename iterator_traits<InputIterator>::iterator_category category;
+        using category = typename iterator_traits<InputIterator>::iterator_category;
         return _distance(first, last, category());
     }
 

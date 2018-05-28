@@ -104,6 +104,7 @@ namespace STL {
         bool empty() const noexcept { return start == finish; }
         size_type size() const noexcept { return static_cast<size_type>(finish - start); }
         size_type capacity() const noexcept { return static_cast<size_type>(end_of_storage - start); }
+        size_type max_size() const noexcept { return data_allocator::max_size(); }
 
         // 修改容器
         

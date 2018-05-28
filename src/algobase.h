@@ -6,8 +6,10 @@
 #include "type_traits.h"
 
 namespace STL {
-    // fill 
-    // 将[first, last)内所有元素填入新值x
+    
+    /**
+     *  @brief  将[first, last)内所有元素填入新值x
+     */
     template <class ForwardIterator, class T>
     inline void fill(ForwardIterator first, ForwardIterator last, const T &x) {
         for ( ; first != last; ++first) {
@@ -15,8 +17,10 @@ namespace STL {
         }
     }        
 
-    // fill_n
-    // 将first开始的n个元素填入新值x，返回的迭代器指向被填入的最后一个元素的下一个位置
+    /**
+     *  @brief  将first开始的n个元素填入新值x
+     *  @return  迭代器，指向被填入的最后一个元素的下一个位置
+     */ 
     template <class OutputIterator, class Size, class T>
     inline OutputIterator fill_n(OutputIterator first, Size n, const T &value) {
         for ( ; n > 0; --n, ++first) {
@@ -25,7 +29,17 @@ namespace STL {
         return first;
     }
 
-    // copy 极其复杂
+    /**
+     *  @brief  交换两个对象a b的内容
+     */ 
+    template <class T>
+    inline void swap(T& a, T& b) {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
+
+    // 以下是整组copy()函数
 
     /********** __copy_d() **********/
 
@@ -121,7 +135,7 @@ namespace STL {
         return _copy<InputIterator, OutputIterator>()(first, last, result);
     }
     
-    // copy_backward
+    // 以下是整组copy_backward()函数
     
     /********** __copy_backward() **********/
     

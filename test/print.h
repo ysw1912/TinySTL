@@ -2,8 +2,25 @@
 #define PRINT_H_ 
 
 #include <iostream>
+#include <string>
 using std::cout;
 using std::endl;
+using std::ostream;
+using std::string;
+
+struct foo {
+    double d;
+    string s;
+
+    bool operator < (const foo& x) const {
+        return d < x.d || (d == x.d && s < x.s);
+    }
+};
+
+ostream& operator<<(ostream& os, const foo& x) {
+    os << '(' << x.d << ' ' << x.s << ')';
+    return os;
+}
 
 template <class Container>
 void Print(Container c) {

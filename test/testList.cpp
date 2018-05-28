@@ -13,18 +13,14 @@
 using namespace std;
 
 int main() {
-    STL::list<int> l;
-    for (int k = 1; k <= 4; ++k) {
-        for (int i = 0; i < k; ++i) {
-            l.push_back(k);
-        }
-        Print(l);
+    STL::list<foo> l1, l2;
+    for (int i = 1; i <= 4; ++i) {
+        l1.push_back({double(i), string(i, i + '0')});
+        l2.push_back({double(i), string(i, i + '1')});
     }
-    l.remove(3);
-    Print(l);
-    l.unique();
-    Print(l);
-    l.clear();
-    Print(l);
+    l1.splice(l1.end(), l2);
+    Print(l1);
+    l1.sort();
+    Print(l1);
     return 0;
 }
