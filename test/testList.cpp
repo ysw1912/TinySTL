@@ -6,6 +6,8 @@
 *************************************************************************/
 
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 #include "../src/list.h"
 #include "print.h"
@@ -22,5 +24,14 @@ int main() {
     Print(l1);
     l1.sort();
     Print(l1);
+    cout << "------------------------" << endl;
+    STL::list<int> l;
+    srand(time(0));
+    for (int i = 0; i < 100; ++i) {
+        l.push_back(rand() % 100 + 1);
+    }
+    Print(l);
+    l.sort();
+    Print(l);
     return 0;
 }

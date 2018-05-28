@@ -425,25 +425,33 @@ namespace STL {
         }
 
         /**
-         *  @brief  list排序，quick sort 
+         *  @brief  list排序，merge sort 
+         *
+         *  ！！！！！很有趣的算法！！！！！
+         *
+         *  https://www.zhihu.com/question/31478115
          */ 
         void sort() {
             // 空链表或仅有一个元素，直接返回
             if (node->next == node || node->next->next == node) return;
-            // 新的list作为数据缓冲区
-            list carry;
-            list tmp[64];
-            int fill = 0;
+            // 一些新的list作为数据缓冲区
+            list carry;     // 每次取源list的头节点
+            list tmp[64];   // 64个桶，tmp[i]的大小为2^i
+            int fill = 0;   // 有元素的桶的最大index + 1
             while (!empty()) {
-                carry.splice(carry.begin(), *this, begin());    // 将链表头接到carry头
+                carry.splice(carry.begin(), *this, begin());    // 取源list的头节点
                 int i = 0;
-                for ( ; i < fill && !tmp[i].empty(); ++i) {
-                    tmp[i].merge(carry);
-                    carry.swap(tmp[i]);
+                // index < fill的桶未满时，不断向桶内搬运节点，桶内有序
+                // index < fill的桶全满时(i能==fill)，则将这些桶归并到carry，再存放到tmp[fill]
+                while (i < fill && !tmp[i].empty()) {
+                    carry.merge(tmp[i]);
+                    ++i;
                 }
-                carry.swap(tmp[i]);
+                tmp[i].swap(carry);
+                // index < fill的桶全满，增加下一个桶
                 if (i == fill)  ++fill;
             }
+            // 将所有桶归并
             for (int i = 1; i < fill; ++i) {
                 tmp[i].merge(tmp[i - 1]);
             }
