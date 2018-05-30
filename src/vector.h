@@ -573,19 +573,31 @@ namespace STL {
         }
 
         /**
-         *  @brief  将x插入vector尾端
+         *  @brief  将x插入vector尾部
          */ 
-        void push_back(const T &x) {
+        void push_back(const value_type& x) {
             if (finish != end_of_storage) {
                 STL::construct(finish, x);
                 ++finish;
             } else {
-                insert_aux(finish, x);
+                emplace_back_aux(x);
             }
         }
 
         /**
-         *  @brief  删除vector尾端元素
+         *  @brief  移动x进vector尾部
+         */ 
+        void push_back(value_type&& x) { emplace_back(std::move(x)); }
+
+        /**
+         *  @brief  添加新元素args到vector尾部
+         */ 
+        template <class... Args>
+        void emplace_back(Args&&... args) {
+        }
+
+        /**
+         *  @brief  移除vector尾部元素
          */ 
         void pop_back() {
             --finish;
