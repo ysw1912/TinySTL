@@ -7,16 +7,17 @@
 
 #include <iostream>
 #include <list>
+#include <vector>
 #include "../test/print.h"
 using namespace std;
 
 int main() {
-    list<int> l1{1, 2, 3, 4, 5};
-    list<int> l2{9, 10, 11, 12, 13};
-    Print(l1);
-    Print(l2);
-    l1.swap(l2);
-    Print(l1);
-    Print(l2);
+    vector<int> v1{1, 2, 3, 4, 5};
+    Print(v1);
+    vector<int> v2;
+    v1.reserve(8);
+    int i = 9;
+    v1.insert(v1.end() - 1, i);
+    Print(v1);
     return 0;
 }
