@@ -3,6 +3,7 @@
 
 #include <initializer_list>
 #include <type_traits>
+#include <utility>
 
 #include "algobase.h"
 #include "allocator.h"
@@ -16,6 +17,9 @@ namespace STL {
         list_node<T>* prev;
         list_node<T>* next;
         T data;
+
+        template <class... Args>
+        list_node(Args&&... args) : data(std::forward<Args>(args)...) { }
     };
 
     /**
@@ -148,14 +152,15 @@ namespace STL {
 
         Node* node;     // 用一个指针(指向end)，表示整个环状双向链表
 
+    protected:
         // 配置一个节点并传回
         Node* get_node() { return list_node_allocator::allocate(); }
 
         // 释放一个节点
         void put_node(Node* p) { list_node_allocator::deallocate(p); } 
         
-        // 初始化list，node头尾指向自己
-        void init() {
+        // node头尾指向自己
+        void init_node() {
             node->next = node;
             node->prev = node;
         }
@@ -163,46 +168,30 @@ namespace STL {
         // 初始化空list
         void empty_init() {
             node = get_node();
-            init();
+            init_node();
         }
 
         // 为新节点分配空间，在上面构造args的拷贝
-#if __cplusplus < 201103L
-        Node* create_node(const value_type& x) {
+        template <class... Args>
+        Node* create_node(Args&&... args) {
             Node* p = get_node();
             try {
-                STL::construct(&p->data, x);
-            } catch (...) {
+                STL::construct(p, std::forward<Args>(args)...);
+            } catch(...) {
                 put_node(p);
                 throw;
             }
             return p;
         }
-#else 
-        Node* create_node(const value_type& x) {
-            Node* p = get_node();
-            try {
-                STL::construct(&p->data, x);
-            } catch (...) {
-                put_node(p);
-                throw;
-            }
-            return p;
-        }
-#endif
         
-        // range constructor
+        // 被范围ctor调用
+        // first, last是iterator的情况
         template <class InputIterator>
         void initialize_dispatch(InputIterator first, InputIterator last, std::false_type) {
             for ( ; first != last; ++first)
-#if __cplusplus >= 201103L
-                push_back(*first);
-#else 
-                push_back(*first);
-#endif 
+                emplace_back(*first);
         }
-
-        // 消除歧义
+        // first, last是integral的情况
         template <class Integer>
         void initialize_dispatch(Integer n, Integer x, std::true_type) {
             fill_initialize(static_cast<size_type>(n), x);
@@ -229,27 +218,98 @@ namespace STL {
                 destroy_node(tmp);
             }
         }
+    
+    public:
+        // The Big Five
 
-        // 在pos位置插入新节点x
-#if __cplusplus < 201103L
-        iterator insert(iterator pos, const value_type& x) {
-            Node* tmp = create_node(x);
-            tmp->next = pos.node;
-            tmp->prev = pos.node->prev;
-            (pos.node)->next = tmp;
-            pos.node->prev = tmp;
-            return tmp;
+        /**
+         *  @brief  constructor
+         */ 
+        list() { empty_init(); }
+
+        explicit list(size_type n, const value_type& x = value_type()) {
+            empty_init();
+            fill_initialize(n, x);
         }
-#else 
-        iterator insert(iterator pos, const value_type& x) {
-            Node* tmp = create_node(x);
+
+        template <class InputIterator>
+        list(InputIterator first, InputIterator last) {
+            empty_init();
+            // 区分参数类型是iterator还是integral
+            using is_integral = typename std::is_integral<InputIterator>::type;
+            initialize_dispatch(first, last, is_integral());
+        } 
+
+        list(std::initializer_list<value_type> l) { 
+            empty_init();
+            initialize_dispatch(l.begin(), l.end(), std::false_type());
+        }
+
+        /**
+         *  @brief  copy constructor
+         */ 
+        list(const list& l) {
+            empty_init();
+            initialize_dispatch(l.begin(), l.end(), std::false_type());
+        }
+
+        /**
+         *  @brief  move constructor
+         */ 
+        list(list&& x) noexcept {
+            Node* const xnode = x.node;
+            if (xnode->next == xnode) {
+                empty_init();
+            } else {
+                Node* const node_copy = node;
+                node_copy->next = xnode->next;
+                node_copy->prev = xnode->prev;
+                node_copy->next->prev = node_copy->prev->next = node;
+                x.empty_init();
+            }
+        }
+
+        /**
+         *  @brief  destructor
+         *
+         *  若data是指针，不能消除所指对象
+         */ 
+        ~list() {
+            clear_nodes();
+            STL::destroy(node);
+        }
+
+    public:
+        // 元素访问
+        reference front() noexcept { return *begin(); }
+        const_reference front() const noexcept { return *begin(); }
+        reference back() { return *iterator(--end()); }
+        const_reference back() const noexcept { return *const_iterator(--end()); }
+
+    public:
+        // 迭代器
+        iterator begin() noexcept { return node->next; }
+        const_iterator begin() const noexcept { return node->next; }
+        iterator end() noexcept { return node; }
+        const_iterator end() const noexcept { return node; }
+
+    public:
+        // 容量 
+        bool empty() const noexcept { return node->next == node; }
+        size_type size() const noexcept { return STL::distance(begin(), end()); }
+        size_type max_size() const noexcept { return list_node_allocator::max_size(); } 
+
+    protected:
+        // 在pos位置插入新节点x
+        template <class... Args>
+        iterator insert(iterator pos, Args&&... args) {
+            Node* tmp = create_node(std::forward<Args>(args)...);
             tmp->next = pos.node;
             tmp->prev = (pos.node)->prev;
             (pos.node->prev)->next = tmp;
             pos.node->prev = tmp;
             return tmp;
         }
-#endif 
 
         // 将[first, last)内所有节点移动到pos指向的节点之前
         void transfer(iterator pos, iterator first, iterator last) {
@@ -265,58 +325,7 @@ namespace STL {
         }
 
     public:
-        // 构造、拷贝、析构
-
-        /**
-         *  @brief  构造函数
-         */ 
-        list() { empty_init(); }
-
-        explicit list(size_type n, const value_type& x = value_type()) {
-            empty_init();
-            fill_initialize(n, x);
-        }
-
-        list(std::initializer_list<value_type> l) { 
-            empty_init();
-            initialize_dispatch(l.begin(), l.end(), std::false_type());
-        }
-
-        /**
-         *  @brief  拷贝构造函数
-         */ 
-        list(const list& l) {
-            empty_init();
-            initialize_dispatch(l.begin(), l.end(), std::false_type());
-        }
-
-        /**
-         *  @brief  析构函数
-         */ 
-        ~list() {
-            clear_nodes();
-            STL::destroy(node);
-        }
-
-        // 元素访问
-        reference front() noexcept { return *begin(); }
-        const_reference front() const noexcept { return *begin(); }
-        reference back() { return *iterator(--end()); }
-        const_reference back() const noexcept { return *const_iterator(--end()); }
-
-        // iterator 
-        iterator begin() noexcept { return node->next; }
-        const_iterator begin() const noexcept { return node->next; }
-        iterator end() noexcept { return node; }
-        const_iterator end() const noexcept { return node; }
-
-        // 容量 
-        bool empty() const noexcept { return node->next == node; }
-        size_type size() const noexcept { return STL::distance(begin(), end()); }
-        size_type max_size() const noexcept { return list_node_allocator::max_size(); } 
-
-
-        // 修改 
+        // 修改器 
        
         /**
          *  @brief  清除list所有节点
@@ -324,7 +333,7 @@ namespace STL {
         void clear() {
             clear_nodes();
             // 恢复原始状态
-            init();
+            init_node();
         }
 
         /**
@@ -353,6 +362,17 @@ namespace STL {
          *  @brief  在list尾部插入元素x
          */ 
         void push_back(const value_type& x) { insert(end(), x); }
+
+        /**
+         *  @brief  
+         */ 
+        void push_back(value_type&& x) { insert(end(), std::move(x)); }
+
+        /**
+         *  @brief
+         */ 
+        template <class... Args>
+        void emplace_back(Args&&... args) { insert(end(), std::forward<Args>(args)...); }
 
         /**
          *  @brief  在list头部插入元素x
