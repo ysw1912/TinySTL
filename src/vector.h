@@ -466,6 +466,43 @@ namespace STL {
                 }
             }
         }
+        
+        // size()==capacity()时，向vector尾部插入args
+        template <class... Args>
+        void emplace_back_aux(Args&&... args) {
+            // 若原大小为0，则配置1个元素大小
+            // 否则，配置为原大小的2倍
+            const size_type old_size = size();
+            const size_type len = old_size != 0 ? 2 * old_size : 1;
+            pointer new_start(data_allocator::allocate(len));
+            pointer new_finish(new_start);
+            try {
+                // 在vector尾部构造初值x
+                STL::construct(new_start + size(), std::forward<Args>(args)...);
+
+                new_finish = pointer();
+                // 将原数据内容拷贝到新空间
+                new_finish = STL::uninitialized_copy(start, finish, new_start);    // ->move 
+                ++new_finish;
+            } catch(...) {
+                // commit or rollback
+                if (!new_finish)
+                    STL::destroy(new_start + size());
+                else 
+                    STL::destroy(new_start, new_finish);
+                data_allocator::deallocate(new_start, len);
+                throw;
+            }
+
+            // 析构原vector
+            STL::destroy(start, finish);
+            deallocate();
+
+            // 调整迭代器，指向新vector
+            start = new_start;
+            finish = new_finish;
+            end_of_storage = new_start + len;
+        }
 
     public:
         // 修改容器
@@ -594,6 +631,12 @@ namespace STL {
          */ 
         template <class... Args>
         void emplace_back(Args&&... args) {
+            if (finish != end_of_storage) {
+                STL::construct(finish, std::forward<Args>(args)...);
+                ++finish;
+            } else {
+                emplace_back_aux(std::forward<Args>(args)...);
+            }
         }
 
         /**
@@ -603,7 +646,13 @@ namespace STL {
             --finish;
             destroy(finish);
         }
-        
+       
+        /**
+         *  @brief  和vector x交换数据内容
+         */ 
+        void swap(vector& x) {
+            swap_data(x);
+        } 
     };
 
 } /* namespace STL */

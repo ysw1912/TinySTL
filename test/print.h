@@ -12,6 +12,8 @@ struct foo {
     double d;
     string s;
 
+    foo(double dd, string ss) : d(dd), s(ss) { }
+
     bool operator < (const foo& x) const {
         return d < x.d || (d == x.d && s < x.s);
     }

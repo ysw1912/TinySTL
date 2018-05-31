@@ -7,25 +7,23 @@
 #include "../src/vector.h"
 #include <iostream>
 #include <string>
+#include <vector>
 #include "print.h"
 using namespace std;
 
 int main() {
-    STL::vector<foo> v1;
-    for (int i = 1; i <= 9; ++i) {
-        v1.push_back({double(i), string(i, i + '0')});
+    STL::vector<foo> v1, v2;
+    for (int i = 1; i <= 5; ++i) {
+        v1.push_back({double(i), string(2, i % 10 + '0')});
     }
-    Print(v1);
-    STL::vector<foo> v2(v1.end() - 2, v1.end());
-    for (int i = 1; i <= 7; ++i) {
-        v2.push_back({double(i + 20), string(i, i + '2')});
-    }
-    // Print(v2);
-    v1.erase(v1.end() - 2);
-    Print(v1);
-    cout << *v1.erase(v1.cbegin() + 2, v1.cbegin() + 5) << endl;
-    Print(v1);
-    v1.erase(v1.end() - 1);
-    Print(v1);
+    foo t = {99, "99"};
+    v1.emplace(v1.begin(), double(99), "999");
+    v2.emplace(v2.begin(), t);
+    Print(v1); 
+    Print(v2);
+    v1.swap(v2);
+    Print(v1); 
+    Print(v2);
+
     return 0;
 }
