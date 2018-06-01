@@ -19,6 +19,11 @@ struct foo {
     }
 };
 
+auto cmp = [](const foo& a, const foo& b) {
+    return a.d > b.d || (a.d == b.d && a.s > b.s); };
+
+auto eq = [](const foo& a, const foo& b) { return a.d == b.d; };
+
 ostream& operator<<(ostream& os, const foo& x) {
     os << '(' << x.d << ' ' << x.s << ')';
     return os;

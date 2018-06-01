@@ -43,7 +43,7 @@ namespace STL {
         list_iterator(Node* x) : node(x) {}
         list_iterator(const list_iterator<T>& x) : node(x.node) {}
 
-       // Self const_cast() const { return *this; }
+        Self M_const_cast() const { return *this; }
 
         // 对迭代器取值，取的是节点的数据值
         reference operator*() const { return node->data; }
@@ -99,7 +99,7 @@ namespace STL {
         list_const_iterator(const Node* x) : node(x) {}
         list_const_iterator(const iterator& x) : node(x.node) {}
 
-       // iterator const_cast() const { return iterator(const_cast<Node*>(node)); }
+        iterator M_const_cast() const { return iterator(const_cast<list_node<T>*>(node)); }
 
         // 对迭代器取值，取的是节点的数据值
         reference operator*() { return node->data; }
@@ -261,10 +261,11 @@ namespace STL {
             if (xnode->next == xnode) {
                 empty_init();
             } else {
+                node = get_node();
                 Node* const node_copy = node;
                 node_copy->next = xnode->next;
                 node_copy->prev = xnode->prev;
-                node_copy->next->prev = node_copy->prev->next = node;
+                node_copy->next->prev = node_copy->prev->next = node_copy;
                 x.empty_init();
             }
         }
@@ -281,17 +282,19 @@ namespace STL {
 
     public:
         // 元素访问
-        reference front() noexcept { return *begin(); }
-        const_reference front() const noexcept { return *begin(); }
+        reference front() { return *begin(); }
+        const_reference front() const { return *begin(); }
         reference back() { return *iterator(--end()); }
-        const_reference back() const noexcept { return *const_iterator(--end()); }
+        const_reference back() const { return *const_iterator(--end()); }
 
     public:
         // 迭代器
-        iterator begin() noexcept { return node->next; }
-        const_iterator begin() const noexcept { return node->next; }
-        iterator end() noexcept { return node; }
-        const_iterator end() const noexcept { return node; }
+        iterator begin() noexcept { return iterator(node->next); }
+        const_iterator begin() const noexcept { return const_iterator(node->next); }
+        const_iterator cbegin() const noexcept { return const_iterator(node->next); }
+        iterator end() noexcept { return iterator(node); }
+        const_iterator end() const noexcept { return const_iterator(node); }
+        const_iterator cend() const noexcept { return const_iterator(node); }
 
     public:
         // 容量 
@@ -311,26 +314,13 @@ namespace STL {
             return tmp;
         }
 
-        // 将[first, last)内所有节点移动到pos指向的节点之前
-        void transfer(iterator pos, iterator first, iterator last) {
-            if (pos != last) {
-                last.node->prev->next = pos.node;   // last前一个节点 后指向 pos 
-                first.node->prev->next = last.node; // first前一个节点 后指向 last 
-                pos.node->prev->next = first.node;  // pos前一个节点 后指向 first 
-                Node* tmp = pos.node->prev;         // tmp = pos前一个节点
-                pos.node->prev = last.node->prev;   // pos 前指向 last前一个节点
-                last.node->prev = first.node->prev; // last 前指向 first前一个节点
-                first.node->prev = tmp;             // first 前指向 pos原来的前一个节点
-            }
-        }
-
     public:
         // 修改器 
        
         /**
-         *  @brief  清除list所有节点
+         *  @brief  移除list所有节点
          */ 
-        void clear() {
+        void clear() noexcept {
             clear_nodes();
             // 恢复原始状态
             init_node();
@@ -347,16 +337,6 @@ namespace STL {
             destroy_node(pos.node);
             return (iterator)next_node;
         }
-        
-        /**
-         *  @brief  移除尾节点
-         */ 
-        void pop_back() { erase(--end()); }
-
-        /**
-         *  @brief  移除头节点
-         */ 
-        void pop_front() { erase(begin()); }
 
         /**
          *  @brief  在list尾部插入元素x
@@ -364,59 +344,74 @@ namespace STL {
         void push_back(const value_type& x) { insert(end(), x); }
 
         /**
-         *  @brief  
+         *  @brief  在list尾部移入元素x
          */ 
         void push_back(value_type&& x) { insert(end(), std::move(x)); }
 
         /**
-         *  @brief
+         *  @brief  在list尾部用args构造节点元素
          */ 
         template <class... Args>
         void emplace_back(Args&&... args) { insert(end(), std::forward<Args>(args)...); }
 
         /**
+         *  @brief  移除尾节点
+         */ 
+        void pop_back() { erase(--end()); }
+
+        /**
          *  @brief  在list头部插入元素x
          */ 
         void push_front(const value_type& x) { insert(begin(), x); }
-        
-        /*
-         *  @brief  移除值为x的所有节点
+    
+        /**
+         *  @brief  在list头部移入元素x
          */ 
-        void remove(const value_type& x) {
-            for (iterator first = begin(); first != end(); ) {
-                iterator next = first;
-                ++next;
-                if (*first == x) erase(first);
-                first = next;
-            }
-        }
+        void push_front(value_type&& x) { insert(begin(), std::move(x)); }
 
         /**
-         *  @brief  将list逆序
+         *  @brief  在list头部用args构造节点元素
          */ 
-        void reverse() {
-            // 空链表或仅有一个元素，直接返回
-            if (node->next == node || node->next->next == node) return;
-            iterator first = begin();
-            ++first;
-            while (first != end()) {
-                iterator old = first;
-                ++first;
-                transfer(begin(), old, first);
+        template <class... Args>
+        void emplace_front(Args&&... args) { insert(begin(), std::forward<Args>(args)...); }
+
+        /**
+         *  @brief  移除头节点
+         */ 
+        void pop_front() { erase(begin()); }
+
+        /** 
+         *  @brief  与链表x交换数据
+         *
+         *  全局函数STL::swap(list1, list2)特化为本函数
+         */ 
+        void swap(list& x) {
+            STL::swap(node, x.node);
+        }
+
+    protected:
+        // 将[first, last)内所有节点移动到pos指向的节点之前
+        void transfer(iterator pos, iterator first, iterator last) {
+            if (pos != last) {
+                last.node->prev->next = pos.node;   // last前一个节点 后指向 pos 
+                first.node->prev->next = last.node; // first前一个节点 后指向 last 
+                pos.node->prev->next = first.node;  // pos前一个节点 后指向 first 
+                Node* tmp = pos.node->prev;         // tmp = pos前一个节点
+                pos.node->prev = last.node->prev;   // pos 前指向 last前一个节点
+                last.node->prev = first.node->prev; // last 前指向 first前一个节点
+                first.node->prev = tmp;             // first 前指向 pos原来的前一个节点
             }
         }
 
+    public: 
+        // 操作 
+        
         /**
          *  @brief  将链表x合并到*this 
          *
-         *  两个lists必须先递增排序
+         *  两个lists必须已经升序排序
          */
-        void  
-#if __cplusplus >= 201103L
-        merge(list& x) {
-#else 
-        merge(list& x) {
-#endif 
+        void merge(list&& x) {
             if (this != &x) {
                 iterator first = begin(), last = end();
                 iterator firstx = x.begin(), lastx = x.end();
@@ -435,19 +430,149 @@ namespace STL {
             }
         }
 
-        /** 
-         *  @brief  与链表x交换数据
+        void merge(list& x) { merge(std::move(x)); }
+        
+        // 自定义比较运算符
+        template <class Compare>
+        void merge(list&& x, Compare cmp) {
+            if (this != &x) {
+                iterator first = begin(), last = end();
+                iterator firstx = x.begin(), lastx = x.end();
+                while (first != last && firstx != lastx) {
+                    if (cmp(*firstx, *first)) {
+                        iterator next = firstx;
+                        transfer(first, firstx, ++next);
+                        firstx = next;
+                    } else {
+                        ++first;
+                    }
+                }
+                if (firstx != lastx) {
+                    transfer(last, firstx, lastx);
+                }
+            }
+        }
+        
+        template <class Compare>
+        void merge(list& x, Compare cmp) { merge(std::move(x), cmp); }
+
+        /**
+         *  @brief  将链表x接合于pos所指位置之前
          *
-         *  全局函数STL::swap(list1, list2)特化为本函数
+         *  x变为空链表，需要this != x
+         */
+        void splice(const_iterator pos, list&& x) noexcept {
+            if (!x.empty())
+                transfer(pos.M_const_cast(), x.begin(), x.end());
+        }
+
+        void splice(const_iterator pos, list& x) noexcept { splice(pos, std::move(x)); }
+
+        /**
+         *  @brief  将i所指元素接合于pos之前
+         *
+         *  pos和i可指向同一个list
+         */
+        void splice(const_iterator pos, list&&, const_iterator i) noexcept {
+            iterator j = i.M_const_cast();
+            ++j;
+            if (pos == i || pos == j)   return;
+            transfer(pos.M_const_cast(), i.M_const_cast(), j);
+        }
+
+        void splice(const_iterator pos, list& x, const_iterator i) noexcept { splice(pos, std::move(x), i); }
+
+        /**
+         *  @brief  将[first, last)内所有元素接合于pos之前
+         *
+         *  pos和[first, last)可指向同一个list，若pos在[first, last)之内则未定义
          */ 
-        void swap(list& x) {
-            STL::swap(node, x.node);
+        void splice(const_iterator pos, list&&, const_iterator first, const_iterator last) noexcept {
+            if (first != last)
+                transfer(pos.M_const_cast(), first.M_const_cast(), last.M_const_cast());
+        }
+
+        void splice(const_iterator pos, list& x, const_iterator first, const_iterator last) noexcept { splice(pos, std::move(x), first, last); }
+
+        /*
+         *  @brief  移除值为x的所有节点
+         *
+         *  用operator==比较元素与x
+         */ 
+        void remove(const value_type& x) {
+            for (iterator first = begin(); first != end(); ) {
+                iterator next = first;
+                ++next;
+                if (*first == x) erase(first);
+                first = next;
+            }
+        }
+
+        /**
+         *  @brief  移除所有一元谓词p对它返回true的元素
+         *
+         *  e.g. list.remove_if([](value_type n){ return cmp(n, constant); });
+         */ 
+        template <class UnaryPredicate>
+        void remove_if(UnaryPredicate p) {
+            for (iterator first = begin(); first != end(); ) {
+                iterator next = first;
+                ++next;
+                if (p(*first)) erase(first);
+                first = next;
+            }
+        }
+
+        /**
+         *  @brief  将list逆序
+         */ 
+        void reverse() noexcept {
+            // 空链表或仅有一个元素，直接返回
+            if (node->next == node || node->next->next == node) return;
+            iterator first = begin();
+            ++first;
+            while (first != end()) {
+                iterator old = first;
+                ++first;
+                transfer(begin(), old, first);
+            }
+        }
+
+        /**
+         *  @brief  移除值相同的连续元素
+         *
+         *  用operator==比较元素 
+         */ 
+        void unique() {
+            iterator first = begin();
+            iterator last = end();
+            if (first == last)  return; // 空链表
+            for (iterator next = first; ++next != last; next = first) {
+                if (*first == *next)
+                    erase(next);
+                else 
+                    first = next;
+            }
+        }
+
+        // 用二元谓词p比较元素
+        template <class BinaryPredicate>
+        void unique(BinaryPredicate p) {
+            iterator first = begin();
+            iterator last = end();
+            if (first == last)  return; // 空链表
+            for (iterator next = first; ++next != last; next = first) {
+                if (p(*first, *next))
+                    erase(next);
+                else 
+                    first = next;
+            }
         }
 
         /**
          *  @brief  list排序，merge sort 
          *
-         *  ！！！！！很有趣的算法！！！！！
+         *  <-！！！！！很有趣的算法！！！！！->
          *
          *  https://www.zhihu.com/question/31478115
          */ 
@@ -478,70 +603,28 @@ namespace STL {
             swap(tmp[fill - 1]);
         }
 
-
-        /**
-         *  @brief  将链表x接合于pos所指位置之前
-         *
-         *  x变为空链表，需要this != x
-         */
-        void 
-#if __cplusplus >= 201103L
-        splice(iterator pos, list& x) {
-#else 
-        splice(iterator pos, list& x) {
-#endif 
-            if (!x.empty())
-                transfer(pos, x.begin(), x.end());
-        }
-
-        /**
-         *  @brief  将i所指元素接合于pos之前
-         *
-         *  pos和i可指向同一个list
-         */
-        void 
-#if __cplusplus >= 201103L
-        splice(iterator pos, list&, iterator i) {
-#else 
-        splice(iterator pos, list&, iterator i) {
-#endif 
-            iterator j = i;
-            ++j;
-            if (pos == i || pos == j)   return;
-            transfer(pos, i, j);
-        }
-
-        /**
-         *  @brief  将[first, last)内所有元素接合于pos之前
-         *
-         *  pos和[first, last)可指向同一个list，若pos在[first, last)之内则未定义
-         */ 
-        void 
-#if __cplusplus >= 201103L
-        splice(iterator pos, list&, iterator first, iterator last) {
-#else 
-        splice(iterator pos, list&, iterator first, iterator last) {
-#endif 
-            if (first != last)
-                transfer(pos, first, last);
-        }
-
-        /**
-         *  @brief  移除值相同的连续元素 
-         */ 
-        void unique() {
-            iterator first = begin();
-            iterator last = end();
-            if (first == last)  return; // 空链表
-            for (iterator next = first; ++next != last; next = first) {
-                if (*first == *next)
-                    erase(next);
-                else 
-                    first = next;
+        // 自定义比较运算符
+        template <class Compare>
+        void sort(Compare cmp) {
+            if (node->next == node || node->next->next == node) return;
+            list carry;    
+            list tmp[64];  
+            int fill = 0;  
+            while (!empty()) {
+                carry.splice(carry.begin(), *this, begin());
+                int i = 0;
+                while (i < fill && !tmp[i].empty()) {
+                    carry.merge(tmp[i], cmp);
+                    ++i;
+                }
+                tmp[i].swap(carry);
+                if (i == fill)  ++fill;
             }
+            for (int i = 1; i < fill; ++i) {
+                tmp[i].merge(tmp[i - 1], cmp);
+            }
+            swap(tmp[fill - 1]);
         }
-
-
     };
     
 } /* namespace STL */ 
