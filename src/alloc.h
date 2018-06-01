@@ -1,5 +1,5 @@
 #ifndef TINYSTL_ALLOC_H_
-#define TINYSTL_ALLOC_H 
+#define TINYSTL_ALLOC_H_  
 
 #include <cstdlib>
 #include <new> 
