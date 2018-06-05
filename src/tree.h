@@ -4,6 +4,7 @@
 #include <memory>
 #include <utility>
 
+#include "algobase.h"
 #include "allocator.h"
 #include "iterator.h"
 
@@ -382,7 +383,7 @@ namespace STL {
         Link_type clone_node(Const_Link_type x) {
             Link_type tmp = create_node(*x->valptr());
             tmp->color = x->color;
-            tmp->left = tmp->right = 0;
+            tmp->left = tmp->right = nullptr;
             return tmp;
         }
 
@@ -392,7 +393,7 @@ namespace STL {
         size_type           node_count;     // 追踪记录树的大小
 
         void reset() {
-            header.parent = 0;
+            header.parent = nullptr;
             header.left = &header;
             header.right = &header;
             node_count = 0;
@@ -401,19 +402,18 @@ namespace STL {
     private:
         void initialize() {
             header.color = red;     // 令header为红色，以区分header和root
-            header.parent = 0;
-            header.left = &header;  // header的左/右子节点指向自己
-            header.right = &header;
+            header.parent = nullptr;
+            header.left = header.right = &header;  // header的左/右子节点指向自己
         }
     
     protected:
         // 取得header的成员
         Base_ptr& root() { return header.parent; }
-        Const_Base_ptr& root() const { return header.parent; }
+        Const_Base_ptr root() const { return header.parent; }
         Base_ptr& leftmost() { return header.left; }
-        Const_Base_ptr& leftmost() const { return header.left; }
+        Const_Base_ptr leftmost() const { return header.left; }
         Base_ptr& rightmost() { return header.right; }
-        Const_Base_ptr& rightmost() const { return header.right; }
+        Const_Base_ptr rightmost() const { return header.right; }
         Link_type M_begin() { return static_cast<Link_type>(header.parent); }
         Const_Link_type M_begin() const { return static_cast<Const_Link_type>(header.parent); }
         Link_type M_end() { return static_cast<Link_type>(&header); }
@@ -428,6 +428,8 @@ namespace STL {
         static Const_Link_type left(Const_Base_ptr x) { return static_cast<Const_Link_type>(x->left); }
         static Link_type right(Base_ptr x) { return static_cast<Link_type>(x->right); }
         static Const_Link_type right(Const_Base_ptr x) { return static_cast<Const_Link_type>(x->right); }
+        static Link_type parent(Base_ptr x) { return static_cast<Link_type>(x->parent); }
+        static Const_Link_type parent(Const_Base_ptr x) { return static_cast<Const_Link_type>(x->parent); }
     
         // 求最小值、最大值
         static Base_ptr minimum(Base_ptr x) { return rb_tree_node_base::minimum(x); }
@@ -438,11 +440,89 @@ namespace STL {
     public:
         using iterator          = rb_tree_iterator<value_type>;
         using const_iterator    = rb_tree_const_iterator<value_type>;
-        
+    
+    protected:
+        // 将x指向的rb_tree拷贝到p所指节点的孩子节点
+        Link_type M_copy(Const_Link_type x, Link_type p) {
+            Link_type top = clone_node(x);
+            top->parent = p;
+            try {
+                if (x->right)
+                    top->right = M_copy(right(x), top);
+                p = top;
+                x = left(x);
+                while (x) {
+                    Link_type y = clone_node(x);
+                    p->left = y;
+                    y->parent = p;
+                    if (x->right)
+                        y->right = M_copy(right(x), y);
+                    p = y;
+                    x = left(x);
+                }
+            } catch(...) {
+                M_erase(top);
+            }
+            return top;
+        }
+
+        void move_data(rb_tree& x) {
+            root() = x.root();
+            leftmost() = x.leftmost();
+            rightmost() = x.rightmost();
+            root()->parent = M_end();
+            node_count = x.node_count;
+            // 重置x
+            x.reset();
+        }
+
+        // 清除x所指的rb_tree
+        void M_erase(Link_type x) {
+            while (x) {
+                M_erase(right(x));
+                Link_type y = left(x);
+                destroy_node(x);
+                x = y;
+            }
+        }
+
     public:
         // The big five
-        rb_tree(const Compare& cmp = Compare())
+        
+        /**
+         *  @brief  constructor
+         */ 
+        explicit rb_tree(const Compare& cmp = Compare())
         : header(), node_count(0), key_compare(cmp) { initialize(); }
+
+        /**
+         *  @brief  copy constructor
+         */ 
+        rb_tree(const rb_tree& x)
+        : header(), node_count(x.node_count), key_compare(x.key_compare) {
+            if (x.root()) {
+                header.color = red;
+                root() = M_copy(x.M_begin(), M_end());
+                leftmost() = minimum(root());
+                rightmost() = maximum(root());
+            } else 
+                initialize();
+        }
+
+        /**
+         *  @brief  move constructor
+         */ 
+        rb_tree(rb_tree&& x)
+        : header(), node_count(x.node_count), key_compare(x.key_compare) {
+            if (x.root()) {
+                move_data(x);
+            }
+        }
+
+        /**
+         *  @brief  destructor
+         */ 
+        ~rb_tree() { M_erase(M_begin()); }
 
     public:
         // 元素访问
@@ -467,33 +547,74 @@ namespace STL {
             Link_type y = static_cast<Link_type>(_y);
             Link_type z;
 
-            if (y == header || x || key_compare(KeyOfValue()(v), key(y))) {
+            if (y == static_cast<Link_type>(&header) || x || key_compare(KeyOfValue()(v), key(y))) {
                 z = create_node(v);     // 创建值为v的节点z
-                left(y) = z;
+                y->left = z;
+                if (y == static_cast<Link_type>(&header)) {      // 此时不用leftmost() = z，因为上一行有相同的作用
+                    root() = z;
+                    rightmost() = z;
+                } else if (y == leftmost())
+                    leftmost() = z;
+            } else {
+                z = create_node(v);
+                y->right = z;
+                if (y == rightmost())
+                    rightmost() = z;
             }
+            // 设置新节点的父节点，左右孩子 
+            z->parent = y;
+            z->left = z->right = nullptr;
+            rb_tree_rebalance(z, header.parent);
+            ++node_count;
+            return iterator(z);
         }
 
     public:
+        /**
+         *  @brief  移除rb_tree所有节点
+         */ 
+        void clear() {
+            M_erase(M_begin());
+            reset();
+        }
+
+        /**
+         *  @brief  插入新值v，节点键值不允许重复，重复插入无效
+         *  @return  pair<iterator, bool>
+         *           iterator   指向新增节点
+         *           bool       是否插入成功
+         */ 
         pair<iterator, bool> insert_unique(const value_type& v) {
-            Link_type y = header;
-            Link_type x = root();
+            Link_type y = static_cast<Link_type>(&header);
+            Link_type x = static_cast<Link_type>(root());
             bool cmp = true;
             while (x) {     // x从根节点开始，往下寻找适当的插入点
                 y = x;
-                cmp = key_compare(KeyOfValue()(v), key(x));     // v的键值与当前节点键值比较
+                // v 小于 x 往左，v 大于等于 x 往右
+                cmp = key_compare(KeyOfValue()(v), key(x));
                 x = cmp ? left(x) : right(x);
             }
-            // 此时x为插入点（叶节点），y是其父节点
+            // x为插入点nullptr，y是x的父节点（叶节点）
             iterator j = iterator(y);   // 迭代器j指向y
-            return M_insert(x, y, v);
+            if (cmp) {   // 表示x插入y左孩子
+                if (j == begin())   // y为最左节点
+                    return pair<iterator, bool>(M_insert(x, y, v), true);
+                else    // j指向自己的前驱
+                    --j;
+            }
+            if (key_compare(key(j.node), KeyOfValue()(v)))  // j指向的节点键值 小于 新增键值v
+                return pair<iterator, bool>(M_insert(x, y, v), true);
+
+            // 插入重复值
+            return pair<iterator, bool>(j, false);
         }
         
         /** 
          *  @brief  插入新值v，节点键值允许重复
          */ 
         iterator insert_equal(const value_type& v) {
-            Link_type y = header;
-            Link_type x = root();
+            Link_type y = static_cast<Link_type>(&header);
+            Link_type x = static_cast<Link_type>(root());
             while (x) {     // x从根节点开始，往下寻找适当的插入点
                 y = x;
                 // v 小于 x 往左，v 大于等于 x 往右
@@ -501,6 +622,56 @@ namespace STL {
             }
             return M_insert(x, y, v);
         }
+
+        /**
+         *  @brief  查找rb_tree中是否有键值为k的节点
+         */ 
+        iterator find(const key_type& k) {
+            Link_type y = static_cast<Link_type>(&header);
+            Link_type x = static_cast<Link_type>(root());
+            while (x) {
+                if (!key_compare(key(x), k)) {  // k的键值小于等于x
+                    y = x;
+                    x = left(x);
+                } else 
+                    x = right(x);
+            }
+            iterator j = iterator(y);
+            // 若k不小于y，则y指向的节点键值为k；若k小于y，则节点不存在
+            return (j == end() || key_compare(k, key(j.node))) ? end() : j;
+        }
+
+        /**
+         *  @brief  与x树交换
+         */ 
+        void swap(rb_tree& x) {
+            if (root() == nullptr) {
+                if (x.root()) {
+                    root() = x.root();
+                    leftmost() = x.leftmost();
+                    rightmost() = x.rightmost();
+                    root()->parent = M_end();
+                    node_count = x.node_count;
+                    x.reset();
+                }
+            } else if (x.root() == nullptr) {
+                x.root() = root();
+                x.leftmost() = leftmost();
+                x.rightmost() = rightmost();
+                x.root()->parent = x.M_end();
+                x.node_count = node_count;
+                reset();
+            } else {
+                STL::swap(root(), x.root());
+                STL::swap(leftmost(), x.leftmost());
+                STL::swap(rightmost(), x.rightmost());
+                root()->parent = M_end();
+                x.root()->parent = x.M_end();
+                STL::swap(node_count, x.node_count);
+            }
+            STL::swap(key_compare, x.key_compare);
+        }
+
     };
 
 } /* namespace STL */
