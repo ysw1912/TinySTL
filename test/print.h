@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <string>
+#include <cstdlib>
+#include <ctime>
 using std::cout;
 using std::endl;
 using std::ostream;
@@ -36,6 +38,11 @@ void Print(Container c) {
         cout << *it << ' ';
     }
     cout << '}' << endl;
+}
+
+// 获得[a, b]的随机整数
+inline int get_rand(int a, int b) {
+    return std::rand() % (b - a + 1) + a;
 }
 
 #endif

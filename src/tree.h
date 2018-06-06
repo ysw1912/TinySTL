@@ -137,7 +137,7 @@ namespace STL {
         using reference     = T&;
 
         using iterator_category = STL::bidirectional_iterator_tag;
-        using differnce_type    = ptrdiff_t;
+        using difference_type   = ptrdiff_t;
 
         using Self      = rb_tree_iterator<T>;
         using Base_ptr  = rb_tree_node_base::Base_ptr;  // 指向node_base的指针
@@ -227,19 +227,6 @@ namespace STL {
         bool operator==(const Self& x) const { return node == x.node; }
         bool operator!=(const Self& x) const { return node != x.node; }
     };
-/*
-    void rb_tree_insert_and_rebalance(const bool insert_left,
-                                      rb_tree_node_base* x,
-                                      rb_tree_node_base* p,
-                                      rb_tree_node_base& header) noexcept {
-        
-    }
-
-    rb_tree_node_base* rb_tree_rebalance_for_erase(rb_tree_node_base* const z,
-                                                   rb_tree_node_base& header) noexcept {
-        
-    }
-*/ 
 
     // 在旋转点x处进行左旋转
     void rb_tree_rotate_left(rb_tree_node_base* x, rb_tree_node_base*& root) {
@@ -320,6 +307,163 @@ namespace STL {
             }
         } // while 
         root->color = black;    // 根节点永远为黑
+    }
+
+    // 重新平衡rb_tree，以准备移除z指向的节点
+    rb_tree_node_base* 
+    rb_tree_rebalance_for_erase(rb_tree_node_base* const z,
+                                rb_tree_node_base& header) noexcept {
+        rb_tree_node_base* y = z;
+        rb_tree_node_base* x = nullptr;
+        rb_tree_node_base* x_parent = nullptr;
+        rb_tree_node_base*& root = header.parent;
+        rb_tree_node_base*& leftmost = header.left;
+        rb_tree_node_base*& rightmost = header.right;
+        if (y->left == nullptr) // z最多有一个孩子
+            x = y->right;       // x指向z的右孩子，可能为nullptr
+        else {
+            if (y->right == nullptr)    // z只有一个左孩子
+                x = y->left;
+            else {                      // z有两个孩子
+                y = y->right;
+                while (y->left)
+                    y = y->left;        // y指向z的后继
+                x = y->right;           // x指向y的右孩子，可能为nullptr
+            }
+        }
+        // 将z指向的节点与rb_tree分离，未删除
+        if (y != z) {               // y是z的后继，让y取代z，x取代y
+            z->left->parent = y;
+            y->left = z->left;
+            if (y != z->right) {    // y不是z的右孩子
+                x_parent = y->parent;
+                if (x)  x->parent = y->parent;
+                y->parent->left = x;
+                y->right = z->right;
+                z->right->parent = y;
+            } else {
+                x_parent = y;
+            }
+            // 将y与z->parent接上
+            if (root == z)  root = y;
+            else if (z->parent->left == z)
+                z->parent->left = y;
+            else 
+                z->parent->right = y;
+            y->parent = z->parent;
+            STL::swap(y->color, z->color);
+            y = z;  // y重新指向待删节点z
+        } else {                    // y指向z，z只有一个孩子x，让x取代z
+            // 将x与z->parent接上
+            x_parent = y->parent;
+            if (x)  x->parent = y->parent;
+            if (root == z)  root = x;
+            else if (z->parent->left == z)
+                z->parent->left = x;
+            else 
+                z->parent->right = x;
+            if (leftmost == z) {    // 删除的z是最小元素
+                if (z->right == nullptr)
+                    leftmost = z->parent;
+                else                // z->right == x
+                    leftmost = rb_tree_node_base::minimum(x);
+            }
+            if (rightmost == z) {   // 删除的z是最大元素
+                if (z->left == nullptr)
+                    rightmost = z->parent;
+                else                // z->left == x
+                    rightmost = rb_tree_node_base::maximum(x);
+            }
+        }
+        // 此时y指向待删除节点z，该节点已与rb_tree分离
+        // 开始调整rb_tree的颜色，依据删除的颜色(而不是节点)y->color 
+        // 删除的颜色为开始x->parent(不是x_parent)的颜色 
+        // 上面if (y != z)的情况下，虽然y指向z，但y->color依然是x->parent节点的颜色
+        // 若y->color == red，则直接删除即可
+        if (y->color == black) {    // 删除的颜色是黑色
+            // case 1:
+            // 若x为新的根节点，则删除节点为原根节点 或者 若x为红色
+            // 最后将x变黑即可
+            while (x != root && (x == nullptr || x->color == black)) {  // x不为根节点且为黑
+                if (x == x_parent->left) {                  // x为左孩子
+                    rb_tree_node_base* w = x_parent->right; // w为x的兄弟
+                    // x和w都可能为nullptr
+                    if (w) {
+                        if (w->color == red) {                  // case 2: x兄弟为红，则将其变为case 3
+                            w->color = black;
+                            x_parent->color = red;
+                            rb_tree_rotate_left(x_parent, root);
+                            w = x_parent->right;
+                        }
+                        // case 3: x兄弟为黑
+                        if ((w->left == nullptr || w->left->color == black)
+                        && (w->right == nullptr || w->right->color == black)) {     // case 3.1: w的两孩子都黑
+                            w->color = red;
+                            x = x_parent;
+                            x_parent = x_parent -> parent;
+                        } else {
+                            if (w->right == nullptr || w->right->color == black) {  // case 3.2: w的左孩子红，右孩子黑，则将其变为case 3.3
+                                if (w->left)    w->left->color = black;
+                                w->color = red;
+                                rb_tree_rotate_right(w, root);
+                                w = x_parent->right;
+                            }
+                            // case 3.3: w的左孩子黑或红，右孩子红
+                            w->color = x_parent->color;
+                            x_parent->color = black;
+                            if (w->right)   w->right->color = black;
+                            rb_tree_rotate_left(x_parent, root);
+                            break;
+                        }
+                    }
+                } else {    // x == x_parent->right，和上面对称
+                    rb_tree_node_base* w = x_parent->left;
+                    if (w) {
+                        if (w->color == red) {                
+                            w->color = black;
+                            x_parent->color = red;
+                            rb_tree_rotate_right(x_parent, root);
+                            w = x_parent->left;
+                        }
+                        if ((w->left == nullptr || w->left->color == black)
+                        && (w->right == nullptr || w->right->color == black)) {
+                            w->color = red;
+                            x = x_parent;
+                            x_parent = x_parent -> parent;
+                        } else {
+                            if (w->left == nullptr || w->left->color == black) {
+                                if (w->right)    w->right->color = black;
+                                w->color = red;
+                                rb_tree_rotate_left(w, root);
+                                w = x_parent->left;
+                            }
+                            w->color = x_parent->color;
+                            x_parent->color = black;
+                            if (w->left)   w->left->color = black;
+                            rb_tree_rotate_right(x_parent, root);
+                            break;
+                        }
+                    }
+                }
+            }
+            // case 1
+            if (x)  x->color = black;
+        }
+        return y;
+    }
+
+    // 计算从node到root路径中的黑色节点数量
+    inline int count_black(const rb_tree_node_base* node, const rb_tree_node_base* root) {
+        if (node == nullptr || root == nullptr)
+            return 0;
+        else {
+            if (node == root)
+                return 1;
+            else {
+                int c = node->color == black ? 1 : 0;
+                return c + count_black(node->parent, root);
+            }
+        }
     }
 
     template <class Key, class Val, class KeyOfValue, class Compare,
@@ -579,6 +723,15 @@ namespace STL {
         }
 
         /**
+         *  @brief  移除迭代器pos所指节点
+         */ 
+        void erase(const_iterator pos) {
+            Link_type y = static_cast<Link_type>(rb_tree_rebalance_for_erase(pos.M_const_cast().node, header));
+            drop_node(y);
+            --node_count;
+        }
+
+        /**
          *  @brief  插入新值v，节点键值不允许重复，重复插入无效
          *  @return  pair<iterator, bool>
          *           iterator   指向新增节点
@@ -671,9 +824,44 @@ namespace STL {
             }
             STL::swap(key_compare, x.key_compare);
         }
-
+    public:
+        // debug
+        /** 
+         *  @brief  验证已生成的树是否满足rb_tree条件
+         */ 
+        bool rb_verify() const {
+            // 空树
+            if (node_count == 0 || begin() == end())
+                return node_count == 0 && begin() == end() && header.left == &header && header.right == &header;
+            // 最小节点到根节点的黑色节点数
+            int len = count_black(leftmost(), root());
+            // 遍历整个rb_tree
+            for (const_iterator it = begin(); it != end(); ++it) {
+                Const_Link_type x = static_cast<Const_Link_type>(it.node);
+                Const_Link_type L = left(x);
+                Const_Link_type R = right(x);
+                // 节点为红，其子节点必须为黑
+                if (x->color == red && L && R && L->color == red && R->color == red)
+                    return false;
+                // BST性质
+                if (L && key_compare(key(x), key(L)))
+                    return false;
+                if (R && key_compare(key(R), key(x)))
+                    return false;
+                // 叶子节点到root路径的黑色节点数相同
+                if (L == nullptr && R == nullptr && count_black(x, root()) != len)
+                    return false;
+            }
+            // 最左节点不为最小节点
+            if (leftmost() != rb_tree_node_base::minimum(root()))
+                return false;
+            // 最右节点不为最大节点
+            if (rightmost() != rb_tree_node_base::maximum(root()))
+                return false;
+            return true;
+        }
     };
 
 } /* namespace STL */
 
-#endif 
+#endif  
