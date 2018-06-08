@@ -40,6 +40,13 @@ void Print(Container c) {
     cout << '}' << endl;
 }
 
+template <class Container, class... Args>
+void Print(Container c, Args... args) {
+    Print(c);
+    if (sizeof...(Args))
+        Print(args...);
+}
+
 // 获得[a, b]的随机整数
 inline int get_rand(int a, int b) {
     return std::rand() % (b - a + 1) + a;
