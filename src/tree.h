@@ -757,7 +757,7 @@ namespace STL {
         /**
          *  @brief  插入新值v，节点键值不允许重复，重复插入无效
          *  @return  pair<iterator, bool>
-         *           iterator   指向新增节点
+         *           iterator   若成功，指向新插入元素；若失败，指向键值重复的旧元素
          *           bool       是否插入成功
          */ 
         pair<iterator, bool> insert_unique(const value_type& v) {
