@@ -2,6 +2,10 @@
 #define TINYSTL_ALLOCATOR_H_ 
 
 #include <cstddef>
+#include <iostream>
+using std::cout;
+using std::endl;
+
 #include "alloc.h"
 #include "construct.h"
 

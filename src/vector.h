@@ -152,6 +152,7 @@ namespace STL {
         }
 
     public:
+        // The big five
         // 构造、拷贝、移动、赋值、析构
         
         /**

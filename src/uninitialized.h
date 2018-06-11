@@ -1,7 +1,7 @@
 #ifndef TINYSTL_UNINITIALIZED_H_
 #define TINYSTL_UNINITIALIZED_H_ 
 
-#include "algobase.h"
+#include "algo.h"
 #include "construct.h"
 #include "type_traits.h"
 
