@@ -10,32 +10,32 @@
 
 ### 功能模块
 
-1. allocator：空间分配器，包括malloc_alloc和pool_alloc
+1. `allocator.h`：空间分配器，包括malloc_alloc和pool_alloc
 
-2. construct：标准构造/析构函数
+2. `construct.h`：标准构造/析构函数
 
-3. type_traits：POD与非POD类型萃取器，基于g++5.4.0中的integral_constant等编译器内置类型计算
+3. `type_traits.h`：POD与非POD类型萃取器，基于g++5.4.0中的integral_constant等编译器内置类型计算
 
-4. iterator：迭代器萃取器以及迭代器全局函数
+4. `iterator.h`：迭代器萃取器以及迭代器全局函数
 
-5. uninitialized：内存初始化函数
+5. `uninitialized.h`：内存初始化函数
 
-6. vector
+6. `vector.h`
 
-7. list
+7. `list.h`
 
-8. 基于rb_tree的set和map
+8. 基于红黑树`tree.h`的`set.h`和`map.h`
       - 红黑树删除操作详细分析写在[博客](https://ysw1912.github.io/post/cc++/stl01/)
 
-9. 基于hashtable
+9. 基于`hashtable.h`
 
-10. algorithm：泛型函数
+10. `algorithm.h`：泛型函数
 
 ### 测试模块
 
-1. test_vector
+1. `test_vector.cpp`
 
-2. test_list
+2. `test_list.cpp`
 
 ### 待开发模块
 
