@@ -5,12 +5,13 @@
 
 #include "tree.h"
 
-namespace STL {
+namespace STL
+{
 
     template <class Key, class T, class Compare = std::less<Key>,
               class Alloc = STL::pool_alloc>
-    class map {
-    
+    class map
+    { 
     public:
         using key_type      = Key;                  // 键值类型
         using mapped_type   = T;                    // 实值/数据类型
@@ -19,7 +20,8 @@ namespace STL {
         
         // functor，用于调用元素比较函数
         class value_compare
-        : public std::binary_function<value_type, value_type, bool> {
+        : public std::binary_function<value_type, value_type, bool>
+        {
             friend class map<Key, T, Compare, Alloc>;
         protected:
             Compare cmp;
@@ -74,7 +76,8 @@ namespace STL {
         /**
          *  @brief  copy assignment
          */
-        map& operator=(const map& x) {
+        map& operator=(const map& x)
+        {
             t = x.t;
             return *this;
         }
@@ -86,7 +89,8 @@ namespace STL {
 
     public:
         // 元素访问
-        mapped_type& operator[](const key_type& k) {
+        mapped_type& operator[](const key_type& k)
+        {
             return (*(insert(value_type(k, mapped_type()))).first).second;
         }
         

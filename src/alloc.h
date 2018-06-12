@@ -8,29 +8,32 @@
 #define THROW_BAD_ALLOC throw std::bad_alloc 
 #endif 
 
-namespace STL {
-
+namespace STL
+{
     // 封装malloc的allocator
-    class malloc_alloc {
-
+    class malloc_alloc
+    {
     private:
         static void *oom_malloc(size_t);
         static void (*malloc_alloc_oom_handler)();
     public:
         // 直接使用malloc()
-        static void * allocate(size_t n) {
+        static void * allocate(size_t n)
+        {
             void *result = malloc(n); 
             if (0 == result)    result = oom_malloc(n); // 无法malloc，改用oom_malloc
             return result;
         }
 
         // 直接使用free()
-        static void deallocate(void *p) {
+        static void deallocate(void *p)
+        {
             free(p);
         }
 
         // 仿真C++的set_new_handler()
-        static void (*set_malloc_handler(void (*f)()))() {
+        static void (*set_malloc_handler(void (*f)()))()
+        {
             void (*old)() = malloc_alloc_oom_handler;
             malloc_alloc_oom_handler = f;
             return old;
@@ -39,7 +42,8 @@ namespace STL {
 
     void (* malloc_alloc::malloc_alloc_oom_handler)() = 0;
     
-    void * malloc_alloc::oom_malloc(size_t n) {
+    void * malloc_alloc::oom_malloc(size_t n)
+    {
         void (*my_malloc_handler)();
         void *result;
 
@@ -57,27 +61,26 @@ namespace STL {
     enum { LEN_FREE_LIST = MAX_BYTES / ALIGN };  // free_list节点个数
 
     // free_lists节点
-    union FreeNode {
+    union FreeNode
+    {
         union FreeNode *next;   // 指向下一个区块
         char data[1];           // 本快内存首地址
     };
 
     // 基于内存池的allocator
-    class pool_alloc {
-
+    class pool_alloc
+    {
     private:
         // 将bytes上调至ALIGN的倍数
-        static size_t ROUND_UP(size_t bytes) {
-            return (bytes + ALIGN - 1) & ~(ALIGN - 1);
-        }
+        static size_t ROUND_UP(size_t bytes)
+        { return (bytes + ALIGN - 1) & ~(ALIGN - 1); }
 
         // 16个节点的free_list
         static FreeNode * free_list[LEN_FREE_LIST];
 
         // 根据bytes大小，决定使用free_list的第n号区块
-        static size_t FREE_LIST_INDEX(size_t bytes) {
-            return (bytes + ALIGN - 1) / ALIGN - 1;
-        }
+        static size_t FREE_LIST_INDEX(size_t bytes)
+        { return (bytes + ALIGN - 1) / ALIGN - 1; }
 
         // allocate()中调用，返回大小为size的空间地址
         // 并可能将多个大小为size的其它区块填充到free_list中 
@@ -106,7 +109,8 @@ namespace STL {
         0, 0, 0, 0, 0, 0, 0, 0
     };
 
-    void * pool_alloc::allocate(size_t n) {
+    void * pool_alloc::allocate(size_t n)
+    {
         // 大于MAX_BYTES就调用一级配置器
         if (n > static_cast<size_t>(MAX_BYTES)) {
             return malloc_alloc::allocate(n);
@@ -122,7 +126,8 @@ namespace STL {
         return result;
     };
 
-    void pool_alloc::deallocate(void *p, size_t n) {
+    void pool_alloc::deallocate(void *p, size_t n)
+    {
         // 大于MAX_BYTES就调用一级配置器
         if (n > static_cast<size_t>(MAX_BYTES)) {
             malloc_alloc::deallocate(p);
@@ -137,7 +142,9 @@ namespace STL {
     // free_list无可用时调用，为free_list填充空间
     // 新的空间取自内存池，取得20个新节点
     // 若内存池空间不足，则获得节点数会＜20
-    void * pool_alloc::refill(size_t size) {    // size已经上调至ALIGN的倍数
+    void * pool_alloc::refill(size_t size)
+    {   
+        // size已经上调至ALIGN的倍数
         int n_nodes = 20;
 
         // 取得n_nodes个区块作为free_list的新节点
@@ -166,7 +173,8 @@ namespace STL {
     }
 
     // 从内存池取空间给free_list使用，size已上调至ALIGN的倍数
-    char * pool_alloc::chunk_alloc(size_t size, int &n_nodes) {
+    char * pool_alloc::chunk_alloc(size_t size, int &n_nodes)
+    {
         char *result;
         size_t total_bytes = size * n_nodes;
         size_t left_bytes = end - start;    // 内存池剩余空间

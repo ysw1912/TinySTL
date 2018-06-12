@@ -3,8 +3,8 @@
 
 #include "algobase.h"
 
-namespace STL {
-
+namespace STL
+{
     /**
      *  @brief  返回指向[first, last)中首个大于等于value的元素的迭代器
      *  若找不到则返回last
@@ -14,7 +14,8 @@ namespace STL {
     
     // 版本一 forward_iterator
     template <class FIt, class T, class Distance>
-    FIt _lower_bound(FIt first, FIt last, const T& value, Distance*, STL::forward_iterator_tag) {
+    FIt _lower_bound(FIt first, FIt last, const T& value, Distance*, STL::forward_iterator_tag)
+    {
         Distance len = STL::distance(first, last);
         Distance half;
         FIt middle;
@@ -34,7 +35,8 @@ namespace STL {
 
     // 版本一 random_access_iterator
     template <class RIt, class T, class Distance>
-    RIt _lower_bound(RIt first, RIt last, const T& value, Distance*, STL::random_access_iterator_tag) {
+    RIt _lower_bound(RIt first, RIt last, const T& value, Distance*, STL::random_access_iterator_tag)
+    {
         Distance len = last - first;
         Distance half;
         RIt middle;
@@ -57,7 +59,8 @@ namespace STL {
     
     // 版本二 forward_iterator
     template <class FIt, class T, class Compare, class Distance>
-    FIt _lower_bound(FIt first, FIt last, const T& value, Compare cmp, Distance*, STL::forward_iterator_tag) {
+    FIt _lower_bound(FIt first, FIt last, const T& value, Compare cmp, Distance*, STL::forward_iterator_tag)
+    {
         Distance len = STL::distance(first, last);
         Distance half;
         FIt middle;
@@ -77,7 +80,8 @@ namespace STL {
 
     // 版本二 random_access_iterator
     template <class RIt, class T, class Compare, class Distance>
-    RIt _lower_bound(RIt first, RIt last, const T& value, Compare cmp, Distance*, STL::random_access_iterator_tag) {
+    RIt _lower_bound(RIt first, RIt last, const T& value, Compare cmp, Distance*, STL::random_access_iterator_tag)
+    {
         Distance len = last - first;
         Distance half;
         RIt middle;

@@ -8,9 +8,11 @@
 #include "allocator.h"
 #include "uninitialized.h"
 
-namespace STL {
+namespace STL
+{
     template <class T, class Alloc = STL::pool_alloc>
-    class vector {
+    class vector
+    {
     public:
         using value_type        = T;
         using iterator          = T*;
@@ -31,14 +33,16 @@ namespace STL {
     protected:
         // 分配n个value_type的空间，并填充x进去
         // 被fill_initialize调用
-        iterator allocate_and_fill(size_type n, const value_type &x) {
+        iterator allocate_and_fill(size_type n, const value_type &x)
+        {
             iterator result = data_allocator::allocate(n);
             STL::uninitialized_fill_n(result, n, x);
             return result;
         }
 
         // 为vector分配内存，并填充n个x
-        void fill_initialize(size_type n, const value_type &x) {
+        void fill_initialize(size_type n, const value_type &x)
+        {
             start = allocate_and_fill(n, x);
             finish = start + n;
             end_of_storage = finish;
@@ -46,7 +50,8 @@ namespace STL {
 
         // 用[first, last)范围元素初始化vector
         template <class ForwardIterator>
-        void range_initialize(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) {
+        void range_initialize(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag)
+        {
             const difference_type n = STL::distance(first, last);
             start = data_allocator::allocate(n);
             end_of_storage = start + n;
@@ -56,7 +61,8 @@ namespace STL {
         // 获得n字节内存，并将[first, last)范围元素拷贝进去
         // 被range_assign调用
         template <class ForwardIterator>
-        pointer allocate_and_copy(size_type n, ForwardIterator first, ForwardIterator last) {
+        pointer allocate_and_copy(size_type n, ForwardIterator first, ForwardIterator last)
+        {
             pointer result = data_allocator::allocate(n);
             try {
                 STL::uninitialized_copy(first, last, result);
@@ -69,13 +75,15 @@ namespace STL {
 
         // 清除[pos, finish)的元素
         // 被fill_assign, range_assign调用
-        void erase_at_end(iterator pos) {
+        void erase_at_end(iterator pos)
+        {
             STL::destroy(pos, finish);
             finish = pos;
         }
         
         // 赋n个x值给vector
-        void fill_assign(size_type n, const value_type& x) {
+        void fill_assign(size_type n, const value_type& x)
+        {
             if (n > capacity()) {
                 vector tmp(n, x);
                 swap_data(tmp);
@@ -90,12 +98,14 @@ namespace STL {
         // 被assign(first, last)调用
         // first, last是integral的情况
         template <class Integer>
-        void assign_dispatch(Integer n, Integer x, std::true_type) {
+        void assign_dispatch(Integer n, Integer x, std::true_type)
+        {
             fill_assign(n, x);
         }
         // first, last是iterator的情况
         template <class InputIterator>
-        void assign_dispatch(InputIterator first, InputIterator last, std::false_type) {
+        void assign_dispatch(InputIterator first, InputIterator last, std::false_type)
+        {
             using category = typename STL::iterator_traits<InputIterator>::iterator_category;
             range_assign(first, last, category());
         }
@@ -103,7 +113,8 @@ namespace STL {
         // 被第二种assign_dispatch调用
         // InputIterator的情况
         template <class InputIterator>
-        void range_assign(InputIterator first, InputIterator last, STL::input_iterator_tag) {
+        void range_assign(InputIterator first, InputIterator last, STL::input_iterator_tag)
+        {
             iterator cur(start);
             for ( ; first != last && cur != finish; ++cur, ++first)
                 *cur = *first;
@@ -114,7 +125,8 @@ namespace STL {
         }
         // ForwardIterator的情况
         template <class ForwardIterator>
-        void range_assign(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) {
+        void range_assign(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag)
+        {
             const size_type len = STL::distance(first, last);
             if (len > capacity()) {
                 pointer tmp(allocate_and_copy(len, first, last));
@@ -133,21 +145,24 @@ namespace STL {
         }
 
         // 将vector x移动赋值给vector
-        void move_assign(vector&& x) {
+        void move_assign(vector&& x)
+        {
             vector tmp;
             swap_data(tmp);
             swap_data(x);
         }
 
         // 将vector与x交换数据
-        void swap_data(vector& x) {
+        void swap_data(vector& x)
+        {
             STL::swap(start, x.start);
             STL::swap(finish, x.finish);
             STL::swap(end_of_storage, x.end_of_storage);
         }
 
         // 释放vector [start, end_of_storage)的内存
-        void deallocate() {
+        void deallocate()
+        {
             if (start)  data_allocator::deallocate(start, end_of_storage - start);
         }
 
@@ -175,7 +190,8 @@ namespace STL {
         /**
          *  @brief  move constructor
          */ 
-        vector(vector&& x) noexcept {
+        vector(vector&& x) noexcept
+        {
             start = finish = end_of_storage = 0;
             swap_data(x);
         }
@@ -183,7 +199,8 @@ namespace STL {
         /**
          *  @brief  copy assignment operator 
          */
-        vector& operator=(const vector &v) {
+        vector& operator=(const vector &v)
+        {
             if (this != &v) {
                 range_initialize(v.begin(), v.end(), STL::random_access_iterator_tag());
             }
@@ -193,7 +210,8 @@ namespace STL {
         /**
          *  @brief  move assignment operator 
          */ 
-        vector& operator=(vector&& x) noexcept {
+        vector& operator=(vector&& x) noexcept
+        {
             move_assign(std::move(x));
             return *this;
         }
@@ -209,7 +227,8 @@ namespace STL {
          *  需要区分参数类型是iterator还是integral
          */ 
         template <class InputIterator>
-        void assign(InputIterator first, InputIterator last) {
+        void assign(InputIterator first, InputIterator last)
+        {
             using is_integral = typename std::is_integral<InputIterator>::type;
             assign_dispatch(first, last, is_integral());
         }
@@ -224,17 +243,20 @@ namespace STL {
 
     protected:
         // 下标越界检查，只用于at()
-        void range_check(size_type n) const {
+        void range_check(size_type n) const
+        {
            if (n >= size())
               throw;
         }
     public: 
         // 元素访问
-        reference at(size_type n) {
+        reference at(size_type n)
+        {
             range_check(n);
             return (*this)[n];
         }
-        const_reference at(size_type n) const {
+        const_reference at(size_type n) const
+        {
             range_check(n);
             return (*this)[n];
         }
@@ -269,7 +291,8 @@ namespace STL {
         /**
          *  @brief  增加vector的容量到n，仅在n大于当前的capacity()时，才分配新存储 
          */ 
-        void reserve(size_type n) {
+        void reserve(size_type n)
+        {
             if (n > max_size())
                 throw;
             if (n > capacity()) {
@@ -289,7 +312,8 @@ namespace STL {
         // 在pos前插入args
         // 被insert(const_iterator, const value_type&)调用
         template <class... Args>
-        void insert_aux(iterator pos, Args&&... args) {
+        void insert_aux(iterator pos, Args&&... args)
+        {
             if (finish != end_of_storage) { // 有备用空间 
                 STL::construct(finish, std::move(*(finish - 1))); // 在备用空间起始处，用当前最后一个元素构造初值
                 ++finish;
@@ -337,7 +361,8 @@ namespace STL {
 
         // 在pos前插入x的n个拷贝
         // 被insert(const_iterator, size_type, const value_type&), 第一个insert_dispatch()调用
-        void fill_insert(iterator pos, size_type n, const value_type& x) {
+        void fill_insert(iterator pos, size_type n, const value_type& x)
+        {
             if (n != 0) {
                 if (size_type(end_of_storage - finish) >= n) {  // "备用空间"大于等于"新增元素个数"
                     value_type x_copy = x;
@@ -396,12 +421,14 @@ namespace STL {
         // 被insert(pos, first, last)调用
         // first, last是integral的情况
         template <class Integer>
-        void insert_dispatch(iterator pos, Integer n, Integer x, std::true_type) {
+        void insert_dispatch(iterator pos, Integer n, Integer x, std::true_type)
+        {
             fill_insert(pos, n, x);
         }
         // first, last是iterator的情况
         template <class InputIterator>
-        void insert_dispatch(iterator pos, InputIterator first, InputIterator last, std::false_type) {
+        void insert_dispatch(iterator pos, InputIterator first, InputIterator last, std::false_type)
+        {
             using category = typename STL::iterator_traits<InputIterator>::iterator_category;
             range_insert(pos, first, last, category());
         }
@@ -409,7 +436,8 @@ namespace STL {
         // 被第二种insert_dispatch()调用
         // InputIterator的情况
         template <class InputIterator>
-        void range_insert(iterator pos, InputIterator first, InputIterator last, STL::input_iterator_tag) {
+        void range_insert(iterator pos, InputIterator first, InputIterator last, STL::input_iterator_tag)
+        {
             for ( ; first != last; ++first) {
                 insert_aux(pos, *first);
                 ++pos;
@@ -417,7 +445,8 @@ namespace STL {
         }
         // ForwardIterator的情况
         template <class ForwardIterator>
-        void range_insert(iterator pos, ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) {
+        void range_insert(iterator pos, ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag)
+        {
             if (first != last) {
                 const size_type n = STL::distance(first, last); // 新增元素个数
                 if (size_type(end_of_storage - finish) >= n) {
@@ -470,7 +499,8 @@ namespace STL {
         
         // size()==capacity()时，向vector尾部插入args
         template <class... Args>
-        void emplace_back_aux(Args&&... args) {
+        void emplace_back_aux(Args&&... args)
+        {
             // 若原大小为0，则配置1个元素大小
             // 否则，配置为原大小的2倍
             const size_type old_size = size();
@@ -506,7 +536,7 @@ namespace STL {
         }
 
     public:
-        // 修改容器
+        // 修改器
     
         /**
          *  @brief  清除vector中所有元素
@@ -519,7 +549,8 @@ namespace STL {
          *  @brief  在pos前插入x
          *  @return  指向被插入x的迭代器
          */ 
-        iterator insert(const_iterator pos, const value_type& x) {
+        iterator insert(const_iterator pos, const value_type& x)
+        {
             const size_type n = pos - start;
             if (finish != end_of_storage && pos == finish) {
                 STL::construct(finish, x);
@@ -547,7 +578,8 @@ namespace STL {
          *  @brief  在pos前插入x的n个拷贝
          *  @return  指向首个被插入元素的迭代器，若n==0则为pos
          */ 
-        iterator insert(const_iterator pos, size_type n, const value_type& x) {
+        iterator insert(const_iterator pos, size_type n, const value_type& x)
+        {
             difference_type offset = pos - cbegin();
             fill_insert(begin() + offset, n, x);
             return start + offset;
@@ -560,7 +592,8 @@ namespace STL {
          *  需要区分参数类型是iterator还是integral
          */
         template <class InputIterator>
-        iterator insert(const_iterator pos, InputIterator first, InputIterator last) {
+        iterator insert(const_iterator pos, InputIterator first, InputIterator last)
+        {
             using is_integral = typename std::is_integral<InputIterator>::type;
             difference_type offset = pos - cbegin();
             insert_dispatch(begin() + offset, first, last, is_integral());
@@ -571,7 +604,8 @@ namespace STL {
          *  @brief  在pos前构造元素args
          */ 
         template <class... Args>
-        iterator emplace(const_iterator pos, Args&&... args) {
+        iterator emplace(const_iterator pos, Args&&... args)
+        {
             const size_type n = pos - start;
             if (finish != end_of_storage && pos == finish) {
                 STL::construct(finish, std::forward<Args>(args)...);
@@ -586,7 +620,8 @@ namespace STL {
          *  @brief  移除pos指向的元素
          *  @return  返回pos迭代器
          */ 
-        iterator erase(const_iterator pos) {
+        iterator erase(const_iterator pos)
+        {
             const iterator cpos = begin() + (pos - cbegin());
             if (cpos + 1 != finish) {
                 STL::copy(cpos + 1, finish, cpos);
@@ -602,7 +637,8 @@ namespace STL {
          *
          *  erase()并不会使capacity减少
          */ 
-        iterator erase(const_iterator first, const_iterator last) {
+        iterator erase(const_iterator first, const_iterator last)
+        {
             const iterator cfirst = begin() + (first - cbegin());
             const iterator clast = begin() + (last - cbegin());
             if (cfirst != clast)
@@ -613,7 +649,8 @@ namespace STL {
         /**
          *  @brief  将x插入vector尾部
          */ 
-        void push_back(const value_type& x) {
+        void push_back(const value_type& x) 
+        {
             if (finish != end_of_storage) {
                 STL::construct(finish, x);
                 ++finish;
@@ -631,7 +668,8 @@ namespace STL {
          *  @brief  添加新元素args到vector尾部
          */ 
         template <class... Args>
-        void emplace_back(Args&&... args) {
+        void emplace_back(Args&&... args) 
+        {
             if (finish != end_of_storage) {
                 STL::construct(finish, std::forward<Args>(args)...);
                 ++finish;
@@ -643,7 +681,8 @@ namespace STL {
         /**
          *  @brief  移除vector尾部元素
          */ 
-        void pop_back() {
+        void pop_back() 
+        {
             --finish;
             destroy(finish);
         }
@@ -651,7 +690,8 @@ namespace STL {
         /**
          *  @brief  和vector x交换数据内容
          */ 
-        void swap(vector& x) {
+        void swap(vector& x) 
+        {
             swap_data(x);
         } 
     };

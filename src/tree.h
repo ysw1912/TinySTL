@@ -10,11 +10,13 @@
 
 using std::pair;
 
-namespace STL {
+namespace STL
+{
 
     enum rb_tree_color { red = false, black = true };
 
-    struct rb_tree_node_base {
+    struct rb_tree_node_base
+    {
         using Base_ptr          = rb_tree_node_base*;
         using Const_Base_ptr    = const rb_tree_node_base*;
 
@@ -23,29 +25,36 @@ namespace STL {
         Base_ptr left;          // 左节点
         Base_ptr right;         // 右节点
         
-        static Base_ptr minimum(Base_ptr x) {   // RB-tree最小值节点
+        // RB-tree最小值节点
+        static Base_ptr minimum(Base_ptr x) 
+        {  
             while (x->left) x = x->left;
             return x;
         }
 
-        static Const_Base_ptr minimum(Const_Base_ptr x) {  
+        static Const_Base_ptr minimum(Const_Base_ptr x)
+        {  
             while (x->left) x = x->left;
             return x;
         }
 
-        static Base_ptr maximum(Base_ptr x) {   // RB-tree最大值节点
+        // RB-tree最大值节点
+        static Base_ptr maximum(Base_ptr x)
+        {  
             while (x->right) x = x->right;
             return x;
         }
 
-        static Const_Base_ptr maximum(Const_Base_ptr x) {  
+        static Const_Base_ptr maximum(Const_Base_ptr x)
+        {  
             while (x->right) x = x->right;
             return x;
         }
     };
 
     template <class Val>
-    struct rb_tree_node : public rb_tree_node_base {
+    struct rb_tree_node : public rb_tree_node_base
+    {
         Val value_field;    // 节点值
         
         Val* valptr() { return std::addressof(value_field); }
@@ -53,7 +62,8 @@ namespace STL {
     };
 
     // 返回rb_tree的后继节点
-    rb_tree_node_base* rb_tree_increment(rb_tree_node_base* x) noexcept {
+    rb_tree_node_base* rb_tree_increment(rb_tree_node_base* x) noexcept
+    {
         rb_tree_node_base* x_copy = x;
         if (x_copy->right) { // 有右子节点，则找出右子树的最小节点
             x_copy = x_copy->right;
@@ -71,7 +81,8 @@ namespace STL {
         return x_copy;
     }
 
-    const rb_tree_node_base* rb_tree_increment(const rb_tree_node_base* x) noexcept {
+    const rb_tree_node_base* rb_tree_increment(const rb_tree_node_base* x) noexcept
+    {
         const rb_tree_node_base* x_copy = x;
         if (x_copy->right) { // 有右子节点，则找出右子树的最小节点
             x_copy = x_copy->right;
@@ -90,7 +101,8 @@ namespace STL {
     }
 
     // 返回rb_tree的前驱节点
-    rb_tree_node_base* rb_tree_decrement(rb_tree_node_base* x) noexcept {
+    rb_tree_node_base* rb_tree_decrement(rb_tree_node_base* x) noexcept
+    {
         rb_tree_node_base* x_copy = x;
         if (x_copy->color == red && x_copy->parent->parent == x_copy)   // x为header时
            x_copy = x_copy->right; 
@@ -110,7 +122,8 @@ namespace STL {
         return x_copy;
     }
 
-    const rb_tree_node_base* rb_tree_decrement(const rb_tree_node_base* x) {
+    const rb_tree_node_base* rb_tree_decrement(const rb_tree_node_base* x)
+    {
         const rb_tree_node_base* x_copy = x;
         if (x_copy->color == red && x_copy->parent->parent == x_copy)   // x为header时
            x_copy = x_copy->right; 
@@ -131,7 +144,8 @@ namespace STL {
     }
 
     template <class T>
-    struct rb_tree_iterator {
+    struct rb_tree_iterator
+    {
         using value_type    = T;
         using pointer       = T*;
         using reference     = T&;
@@ -151,23 +165,27 @@ namespace STL {
         reference operator*() const { return *static_cast<Link_type>(node)->valptr(); }
         pointer operator->() const { return static_cast<Link_type>(node)->valptr(); }
 
-        Self& operator++() {
+        Self& operator++()
+        {
             node = rb_tree_increment(node);
             return *this;
         }
 
-        Self operator++(int) {
+        Self operator++(int)
+        {
             Self tmp = *this;
             node = rb_tree_increment(node);
             return tmp;
         }
 
-        Self& operator--() {
+        Self& operator--()
+        {
             node = rb_tree_decrement(node);
             return *this;
         }
 
-        Self operator--(int) {
+        Self operator--(int)
+        {
             Self tmp = *this;
             node = rb_tree_decrement(node);
             return tmp;
@@ -178,7 +196,8 @@ namespace STL {
     };
 
     template <class T>
-    struct rb_tree_const_iterator {
+    struct rb_tree_const_iterator
+    {
         using value_type    = T;
         using pointer       = const T*;
         using reference     = const T&;
@@ -202,23 +221,27 @@ namespace STL {
         reference operator*() const { return *static_cast<Link_type>(node)->valptr(); }
         pointer operator->() const { return static_cast<Link_type>(node)->valptr(); }
 
-        Self& operator++() {
+        Self& operator++()
+        {
             node = rb_tree_increment(node);
             return *this;
         }
 
-        Self operator++(int) {
+        Self operator++(int)
+        {
             Self tmp = *this;
             node = rb_tree_increment(node);
             return tmp;
         }
 
-        Self& operator--() {
+        Self& operator--()
+        {
             node = rb_tree_decrement(node);
             return *this;
         }
 
-        Self operator--(int) {
+        Self operator--(int)
+        {
             Self tmp = *this;
             node = rb_tree_decrement(node);
             return tmp;
@@ -229,7 +252,8 @@ namespace STL {
     };
 
     // 在旋转点x处进行左旋转
-    void rb_tree_rotate_left(rb_tree_node_base* x, rb_tree_node_base*& root) {
+    void rb_tree_rotate_left(rb_tree_node_base* x, rb_tree_node_base*& root)
+    {
         rb_tree_node_base* y = x->right;    // y指向旋转点的右孩子
         x->right = y->left;
         if (y->left)    y->left->parent = x;    // 设完A->child = B，记得设置B->parent = A
@@ -247,7 +271,8 @@ namespace STL {
     }
 
     // 在旋转点x处进行右旋转，代码与左旋转完全对称
-    void rb_tree_rotate_right(rb_tree_node_base* x, rb_tree_node_base*& root) {
+    void rb_tree_rotate_right(rb_tree_node_base* x, rb_tree_node_base*& root)
+    {
         rb_tree_node_base* y = x->left;
         x->left = y->right;
         if (y->right)    y->right->parent = x;
@@ -267,7 +292,8 @@ namespace STL {
      *  @param  x  指向新增节点
      *  @param  root  指向根节点
      */ 
-    void rb_tree_rebalance(rb_tree_node_base* x, rb_tree_node_base*& root) {
+    void rb_tree_rebalance(rb_tree_node_base* x, rb_tree_node_base*& root)
+    {
         x->color = red;     // 新节点必为红
         while (x != root && x->parent->color == red) {
             // x的父节点为祖父节点的左孩子
@@ -312,7 +338,8 @@ namespace STL {
     // 重新平衡rb_tree，以准备移除z指向的节点
     rb_tree_node_base* 
     rb_tree_rebalance_for_erase(rb_tree_node_base* const z,
-                                rb_tree_node_base& header) noexcept {
+                                rb_tree_node_base& header) noexcept
+    {
         rb_tree_node_base* y = z;
         rb_tree_node_base* x = nullptr;
         rb_tree_node_base* x_parent = nullptr;
@@ -450,7 +477,8 @@ namespace STL {
     }
 
     // 计算从node到root路径中的黑色节点数量
-    inline int count_black(const rb_tree_node_base* node, const rb_tree_node_base* root) {
+    inline int count_black(const rb_tree_node_base* node, const rb_tree_node_base* root)
+    {
         if (node == nullptr || root == nullptr)
             return 0;
         else {
@@ -465,7 +493,8 @@ namespace STL {
 
     template <class Key, class Val, class KeyOfValue, class Compare,
               class Alloc = STL::pool_alloc>
-    class rb_tree {
+    class rb_tree
+    {
     protected:
         using rb_tree_node_allocator    = STL::allocator<rb_tree_node<Val>, Alloc>;
         using Base_ptr                  = rb_tree_node_base*;
@@ -489,7 +518,8 @@ namespace STL {
         
         // 构造节点
         template <class... Args>
-        void construct_node(Link_type node, Args&&... args) {
+        void construct_node(Link_type node, Args&&... args)
+        {
             try {
                 ::new(node) rb_tree_node<value_type>;
                 STL::construct(node->valptr(), std::forward<Args>(args)...);
@@ -502,26 +532,30 @@ namespace STL {
 
         // 创建节点 = 分配内存 + 构造节点值
         template <class... Args>
-        Link_type create_node(Args&&... args) {
+        Link_type create_node(Args&&... args)
+        {
             Link_type tmp = get_node();
             construct_node(tmp, std::forward<Args>(args)...);
             return tmp;
         }
 
         // 析构节点
-        void destroy_node(Link_type p) noexcept {
+        void destroy_node(Link_type p) noexcept
+        {
             STL::destroy(p->valptr());
             p->~rb_tree_node<value_type>();
         }
 
         // 删除节点 = 析构节点 + 释放内存
-        void drop_node(Link_type p) {
+        void drop_node(Link_type p)
+        {
             destroy_node(p);
             put_node(p);
         }
 
         // 克隆节点（值和颜色）
-        Link_type clone_node(Const_Link_type x) {
+        Link_type clone_node(Const_Link_type x)
+        {
             Link_type tmp = create_node(*x->valptr());
             tmp->color = x->color;
             tmp->left = tmp->right = nullptr;
@@ -533,7 +567,8 @@ namespace STL {
         rb_tree_node_base   header;
         size_type           node_count;     // 追踪记录树的大小
 
-        void reset() {
+        void reset()
+        {
             header.parent = nullptr;
             header.left = &header;
             header.right = &header;
@@ -541,7 +576,8 @@ namespace STL {
         }
 
     private:
-        void initialize() {
+        void initialize()
+        {
             header.color = red;     // 令header为红色，以区分header和root
             header.parent = nullptr;
             header.left = header.right = &header;  // header的左/右子节点指向自己
@@ -584,7 +620,8 @@ namespace STL {
     
     protected:
         // 将x指向的rb_tree拷贝到p所指节点的孩子节点
-        Link_type M_copy(Const_Link_type x, Link_type p) {
+        Link_type M_copy(Const_Link_type x, Link_type p)
+        {
             Link_type top = clone_node(x);
             top->parent = p;
             try {
@@ -607,7 +644,8 @@ namespace STL {
             return top;
         }
 
-        void move_data(rb_tree& x) {
+        void move_data(rb_tree& x)
+        {
             root() = x.root();
             leftmost() = x.leftmost();
             rightmost() = x.rightmost();
@@ -618,7 +656,8 @@ namespace STL {
         }
 
         // 清除x所指的rb_tree
-        void erase_tree(Link_type x) {
+        void erase_tree(Link_type x)
+        {
             while (x) {
                 erase_tree(right(x));
                 Link_type y = left(x);
@@ -640,7 +679,8 @@ namespace STL {
          *  @brief  copy constructor
          */ 
         rb_tree(const rb_tree& x)
-        : header(), node_count(x.node_count), key_compare(x.key_compare) {
+        : header(), node_count(x.node_count), key_compare(x.key_compare)
+        {
             if (x.root()) {
                 header.color = red;
                 root() = M_copy(x.M_begin(), M_end());
@@ -654,7 +694,8 @@ namespace STL {
          *  @brief  move constructor
          */ 
         rb_tree(rb_tree&& x)
-        : header(), node_count(x.node_count), key_compare(x.key_compare) {
+        : header(), node_count(x.node_count), key_compare(x.key_compare)
+        {
             if (x.root()) {
                 move_data(x);
             }
@@ -663,7 +704,8 @@ namespace STL {
         /**
          *  @brief copy assignment
          */ 
-        rb_tree& operator=(const rb_tree& x) {
+        rb_tree& operator=(const rb_tree& x)
+        {
             if (this != &x) {
                 clear();
                 key_compare = x.key_compare;
@@ -700,7 +742,8 @@ namespace STL {
         // x - 新值插入点，初始为叶节点的孩子(nullptr)
         // y - x的父节点
         // v - 新值
-        iterator M_insert(Base_ptr _x, Base_ptr _y, const value_type& v) {
+        iterator M_insert(Base_ptr _x, Base_ptr _y, const value_type& v)
+        {
             Link_type x = static_cast<Link_type>(_x);
             Link_type y = static_cast<Link_type>(_y);
             Link_type z;
@@ -728,14 +771,16 @@ namespace STL {
         }
 
         // 移除迭代器pos所指节点 
-        void erase_aux(const_iterator pos) {
+        void erase_aux(const_iterator pos)
+        {
             Link_type y = static_cast<Link_type>(rb_tree_rebalance_for_erase(pos.M_const_cast().node, header));
             drop_node(y);
             --node_count;
         }
 
         // 移除范围[first, last)内的节点
-        void erase_aux(const_iterator first, const_iterator last) {
+        void erase_aux(const_iterator first, const_iterator last)
+        {
             if (first == begin() && last == end())
                 clear();
             else 
@@ -749,7 +794,8 @@ namespace STL {
         /**
          *  @brief  移除rb_tree所有节点
          */ 
-        void clear() {
+        void clear()
+        {
             erase_tree(M_begin());
             reset();
         }
@@ -760,7 +806,8 @@ namespace STL {
          *           iterator   若成功，指向新插入元素；若失败，指向键值重复的旧元素
          *           bool       是否插入成功
          */ 
-        pair<iterator, bool> insert_unique(const value_type& v) {
+        pair<iterator, bool> insert_unique(const value_type& v)
+        {
             Link_type x = M_begin();
             Link_type y = M_end();
             bool cmp = true;
@@ -788,7 +835,8 @@ namespace STL {
         /** 
          *  @brief  插入新值v，节点键值允许重复
          */ 
-        iterator insert_equal(const value_type& v) {
+        iterator insert_equal(const value_type& v)
+        {
             Link_type x = M_begin();
             Link_type y = M_end();
             while (x) {     // x从根节点开始，往下寻找适当的插入点
@@ -803,7 +851,8 @@ namespace STL {
          *  @brief  插入来自范围[first, last)的元素
          */ 
         template <class InputIterator>
-        void insert_unique(InputIterator first, InputIterator last) {
+        void insert_unique(InputIterator first, InputIterator last)
+        {
             for ( ; first != last; ++first)
                 insert_unique(*first);
         }
@@ -812,14 +861,16 @@ namespace STL {
          *  @brief  移除迭代器pos所指节点
          *  @return  删除节点的后继（用该后继取代删除节点的位置）
          */ 
-        iterator erase(const_iterator pos) {
+        iterator erase(const_iterator pos)
+        {
             const_iterator result = pos;
             ++result;
             erase_aux(pos);
             return result.M_const_cast();
         }
 
-        iterator erase(iterator pos) {
+        iterator erase(iterator pos)
+        {
             iterator result = pos;
             ++result;
             erase_aux(pos);
@@ -830,7 +881,8 @@ namespace STL {
          *  @brief  移除rb_tree内迭代器范围[first, last)内的节点
          *  @return  last迭代器
          */
-        iterator erase(const_iterator first, const_iterator last) {
+        iterator erase(const_iterator first, const_iterator last)
+        {
             erase_aux(first, last);
             return last.M_const_cast();
         }
@@ -839,7 +891,8 @@ namespace STL {
          *  @brief  移除rb_tree内键值为x的所有节点
          *  @return  删除节点的个数
          */ 
-        size_type erase(const key_type& x) {
+        size_type erase(const key_type& x)
+        {
             pair<iterator, iterator> p = equal_range(x);
             const size_type old_size = size();
             erase(p.first, p.second);
@@ -851,7 +904,8 @@ namespace STL {
          *
          *  first和last是Key*类型的指针
          */ 
-        void erase(const key_type* first, const key_type* last) {
+        void erase(const key_type* first, const key_type* last)
+        {
             while (first != last)
                 erase(*first++);
         }
@@ -859,7 +913,8 @@ namespace STL {
         /**
          *  @brief  与x树交换
          */ 
-        void swap(rb_tree& x) {
+        void swap(rb_tree& x)
+        {
             if (root() == nullptr) {
                 if (x.root()) {
                     root() = x.root();
@@ -889,7 +944,8 @@ namespace STL {
 
     protected:
         // 从x节点开始查找，找到首个键值不小于k的节点的迭代器
-        iterator M_lower_bound(Link_type x, Link_type y, const key_type& k) {
+        iterator M_lower_bound(Link_type x, Link_type y, const key_type& k)
+        {
             while (x)
                 if (!key_compare(key(x), k))
                     y = x, x = left(x);
@@ -898,7 +954,8 @@ namespace STL {
             return iterator(y);
         }
 
-        const_iterator M_lower_bound(Const_Link_type x, Const_Link_type y, const key_type& k) const {
+        const_iterator M_lower_bound(Const_Link_type x, Const_Link_type y, const key_type& k) const
+        {
             while (x)
                 if (!key_compare(key(x), k))
                     y = x, x = left(x);
@@ -908,7 +965,8 @@ namespace STL {
         }
 
         // 从x节点开始查找，找到首个键值大于k的节点的迭代器
-        iterator M_upper_bound(Link_type x, Link_type y, const key_type& k) {
+        iterator M_upper_bound(Link_type x, Link_type y, const key_type& k)
+        {
             while (x)
                 if (key_compare(k, key(x)))
                     y = x, x = left(x);
@@ -917,7 +975,8 @@ namespace STL {
             return iterator(y);
         }
 
-        const_iterator M_upper_bound(Const_Link_type x, Const_Link_type y, const key_type& k) const {
+        const_iterator M_upper_bound(Const_Link_type x, Const_Link_type y, const key_type& k) const
+        {
             while (x)
                 if (key_compare(k, key(x)))
                     y = x, x = left(x);
@@ -936,7 +995,8 @@ namespace STL {
          *
          *  若无节点的键值不小于k 或 大于k，则对应的迭代器将返回end()
          */ 
-        pair<iterator, iterator> equal_range(const key_type& k) {
+        pair<iterator, iterator> equal_range(const key_type& k)
+        {
             Link_type x = M_begin();
             Link_type y = M_end();
             while (x) {
@@ -954,7 +1014,8 @@ namespace STL {
             return pair<iterator, iterator>(iterator(y), iterator(y));
         }
         
-        pair<const_iterator, const_iterator> equal_range(const key_type& k) const {
+        pair<const_iterator, const_iterator> equal_range(const key_type& k) const
+        {
             Const_Link_type x = M_begin();
             Const_Link_type y = M_end();
             while (x) {
@@ -993,13 +1054,15 @@ namespace STL {
         /**
          *  @brief  查找rb_tree中键值为k的节点
          */ 
-        iterator find(const key_type& k) {
+        iterator find(const key_type& k)
+        {
             iterator j = M_lower_bound(M_begin(), M_end(), k);
             // 若k不小于y，则y指向的节点键值为k；若k小于y，则节点不存在
             return (j == end() || key_compare(k, key(j.node))) ? end() : j;
         }
 
-        const_iterator find(const key_type& k) const {
+        const_iterator find(const key_type& k) const
+        {
             const_iterator j = M_lower_bound(M_begin(), M_end(), k);
             // 若k不小于y，则y指向的节点键值为k；若k小于y，则节点不存在
             return (j == end() || key_compare(k, key(j.node))) ? end() : j;
@@ -1008,7 +1071,8 @@ namespace STL {
         /**
          *  @brief  返回rb_tree中键值等于k的节点个数
          */ 
-        size_type count(const key_type& k) const {
+        size_type count(const key_type& k) const
+        {
             pair<const_iterator, const_iterator> p = equal_range(k);
             const size_type n = STL::distance(p.first, p.second);
             return n;
@@ -1020,7 +1084,8 @@ namespace STL {
         /** 
          *  @brief  验证已生成的树是否满足rb_tree条件
          */ 
-        bool rb_verify() const {
+        bool rb_verify() const
+        {
             // 空树
             if (node_count == 0 || begin() == end())
                 return node_count == 0 && begin() == end() && header.left == &header && header.right == &header;

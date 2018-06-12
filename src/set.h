@@ -6,12 +6,13 @@
 
 #include "tree.h"
 
-namespace STL {
+namespace STL
+{
 
     template <class Key, class Compare = std::less<Key>,
               class Alloc = STL::pool_alloc>
-    class set {
-    
+    class set
+    { 
     public:
         using key_type      = Key;
         using value_type    = Key;
@@ -63,7 +64,8 @@ namespace STL {
         /**
          *  @brief copy assignment
          */ 
-        set& operator=(const set& x) {
+        set& operator=(const set& x)
+        {
             t = x.t;
             return *this;
         }
@@ -104,7 +106,8 @@ namespace STL {
          *  @return  bool  是否插入成功
          *           iterator  若成功，指向新插入元素；若失败，指向键值重复的旧元素
          */ 
-        pair<iterator, bool> insert(const value_type& x) {
+        pair<iterator, bool> insert(const value_type& x)
+        {
             pair<typename Rep_type::iterator, bool> p = t.insert_unique(x);
             return pair<iterator, bool>(p.first, p.second);
         }

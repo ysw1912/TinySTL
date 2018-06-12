@@ -9,11 +9,12 @@
 #include "allocator.h"
 #include "iterator.h"
 
-namespace STL {
-    
-    // list的节点结构
+namespace STL
+{    
+    // list的节点
     template <class T>
-    struct list_node {
+    struct list_node
+    {
         list_node<T>* prev;
         list_node<T>* next;
         T data;
@@ -28,7 +29,8 @@ namespace STL {
      *  所有函数是操作符重载
      */ 
     template <class T>
-    struct list_iterator : public STL::iterator<STL::bidirectional_iterator_tag, T> {
+    struct list_iterator : public STL::iterator<STL::bidirectional_iterator_tag, T>
+    {
         using Self      = list_iterator<T>;
         using Node      = list_node<T>;
 
@@ -51,22 +53,26 @@ namespace STL {
         pointer operator->() const { return &(node->data); }
 
         // 迭代器+1，前进一个节点
-        Self& operator++() {
+        Self& operator++()
+        {
             node = node->next;
             return *this;
         }
-        Self operator++(int) {
+        Self operator++(int)
+        {
             Self tmp = *this;
             node = node->next;
             return tmp;
         }
 
         // 迭代器-1，后退一个节点
-        Self& operator--() {
+        Self& operator--()
+        {
             node = node->prev;
             return *this;
         }
-        Self operator--(int) {
+        Self operator--(int)
+        {
             Self tmp = *this;
             node = node->prev;
             return tmp;
@@ -82,7 +88,8 @@ namespace STL {
      *  所有函数是操作符重载
      */ 
     template <class T>
-    struct list_const_iterator : public STL::iterator<STL::bidirectional_iterator_tag, const T> {
+    struct list_const_iterator : public STL::iterator<STL::bidirectional_iterator_tag, const T> 
+    {
         using Base      = STL::iterator<STL::bidirectional_iterator_tag, const T>;
         using Self      = list_const_iterator<T>;
         using Node      = const list_node<T>;
@@ -107,22 +114,26 @@ namespace STL {
         pointer operator->() const { return &(static_cast<Node*>(node)->data); }
 
         // 迭代器+1，前进一个节点
-        Self& operator++() {
+        Self& operator++()
+        {
             node = node->next;
             return *this;
         }
-        Self operator++(int) {
+        Self operator++(int)
+        {
             Self tmp = *this;
             node = node->next;
             return tmp;
         }
 
         // 迭代器-1，后退一个节点
-        Self& operator--() {
+        Self& operator--()
+        {
             node = node->prev;
             return *this;
         }
-        Self operator--(int) {
+        Self operator--(int)
+        {
             Self tmp = *this;
             node = node->prev;
             return tmp;
@@ -133,7 +144,8 @@ namespace STL {
     };
 
     template <class T, class Alloc = STL::pool_alloc>
-    class list {
+    class list
+    {
     public:
         using value_type                = T;
         using pointer                   = T*;
@@ -160,20 +172,23 @@ namespace STL {
         void put_node(Node* p) { list_node_allocator::deallocate(p); } 
         
         // node头尾指向自己
-        void init_node() {
+        void init_node()
+        {
             node->next = node;
             node->prev = node;
         }
 
         // 初始化空list
-        void empty_init() {
+        void empty_init()
+        {
             node = get_node();
             init_node();
         }
 
         // 为新节点分配空间，在上面构造args的拷贝
         template <class... Args>
-        Node* create_node(Args&&... args) {
+        Node* create_node(Args&&... args)
+        {
             Node* p = get_node();
             try {
                 STL::construct(p, std::forward<Args>(args)...);
@@ -187,30 +202,35 @@ namespace STL {
         // 被范围ctor调用
         // first, last是iterator的情况
         template <class InputIterator>
-        void initialize_dispatch(InputIterator first, InputIterator last, std::false_type) {
+        void initialize_dispatch(InputIterator first, InputIterator last, std::false_type)
+        {
             for ( ; first != last; ++first)
                 emplace_back(*first);
         }
         // first, last是integral的情况
         template <class Integer>
-        void initialize_dispatch(Integer n, Integer x, std::true_type) {
+        void initialize_dispatch(Integer n, Integer x, std::true_type)
+        {
             fill_initialize(static_cast<size_type>(n), x);
         }
 
         // 被list(n, x)调用，或者range constructor产生的歧义
-        void fill_initialize(size_type n, const value_type& x) {
+        void fill_initialize(size_type n, const value_type& x)
+        {
             for ( ; n; --n)
                 push_back(x);
         }
  
         // 析构一个节点并释放空间
-        void destroy_node(Node* p) {
+        void destroy_node(Node* p)
+        {
             STL::destroy(&p->data);
             put_node(p);
         }
         
         // 清除list所有节点
-        void clear_nodes() {
+        void clear_nodes()
+        {
             Node* cur = node->next; // begin()
             while (cur != node) {
                 Node* tmp = cur;
@@ -227,20 +247,23 @@ namespace STL {
          */ 
         list() { empty_init(); }
 
-        explicit list(size_type n, const value_type& x = value_type()) {
+        explicit list(size_type n, const value_type& x = value_type())
+        {
             empty_init();
             fill_initialize(n, x);
         }
 
         template <class InputIterator>
-        list(InputIterator first, InputIterator last) {
+        list(InputIterator first, InputIterator last)
+        {
             empty_init();
             // 区分参数类型是iterator还是integral
             using is_integral = typename std::is_integral<InputIterator>::type;
             initialize_dispatch(first, last, is_integral());
         } 
 
-        list(std::initializer_list<value_type> l) { 
+        list(std::initializer_list<value_type> l)
+        { 
             empty_init();
             initialize_dispatch(l.begin(), l.end(), std::false_type());
         }
@@ -248,7 +271,8 @@ namespace STL {
         /**
          *  @brief  copy constructor
          */ 
-        list(const list& l) {
+        list(const list& l)
+        {
             empty_init();
             initialize_dispatch(l.begin(), l.end(), std::false_type());
         }
@@ -256,7 +280,8 @@ namespace STL {
         /**
          *  @brief  move constructor
          */ 
-        list(list&& x) noexcept {
+        list(list&& x) noexcept
+        {
             Node* const xnode = x.node;
             if (xnode->next == xnode) {
                 empty_init();
@@ -275,7 +300,8 @@ namespace STL {
          *
          *  若data是指针，不能消除所指对象
          */ 
-        ~list() {
+        ~list()
+        {
             clear_nodes();
             STL::destroy(node);
         }
@@ -305,7 +331,8 @@ namespace STL {
     protected:
         // 在pos位置插入新节点x
         template <class... Args>
-        iterator insert(iterator pos, Args&&... args) {
+        iterator insert(iterator pos, Args&&... args)
+        {
             Node* tmp = create_node(std::forward<Args>(args)...);
             tmp->next = pos.node;
             tmp->prev = (pos.node)->prev;
@@ -320,7 +347,8 @@ namespace STL {
         /**
          *  @brief  移除list所有节点
          */ 
-        void clear() noexcept {
+        void clear() noexcept
+        {
             clear_nodes();
             // 恢复原始状态
             init_node();
@@ -329,7 +357,8 @@ namespace STL {
         /**
          *  @brief  移除迭代器pos所指节点
          */ 
-        iterator erase(iterator pos) {
+        iterator erase(iterator pos)
+        {
             Node* next_node = pos.node->next;
             Node* prev_node = pos.node->prev;
             prev_node->next = next_node;
@@ -385,13 +414,15 @@ namespace STL {
          *
          *  全局函数STL::swap(list1, list2)特化为本函数
          */ 
-        void swap(list& x) {
+        void swap(list& x)
+        {
             STL::swap(node, x.node);
         }
 
     protected:
         // 将[first, last)内所有节点移动到pos指向的节点之前
-        void transfer(iterator pos, iterator first, iterator last) {
+        void transfer(iterator pos, iterator first, iterator last)
+        {
             if (pos != last) {
                 last.node->prev->next = pos.node;   // last前一个节点 后指向 pos 
                 first.node->prev->next = last.node; // first前一个节点 后指向 last 
@@ -411,7 +442,8 @@ namespace STL {
          *
          *  两个lists必须已经升序排序
          */
-        void merge(list&& x) {
+        void merge(list&& x)
+        {
             if (this != &x) {
                 iterator first = begin(), last = end();
                 iterator firstx = x.begin(), lastx = x.end();
@@ -434,7 +466,8 @@ namespace STL {
         
         // 自定义比较运算符
         template <class Compare>
-        void merge(list&& x, Compare cmp) {
+        void merge(list&& x, Compare cmp)
+        {
             if (this != &x) {
                 iterator first = begin(), last = end();
                 iterator firstx = x.begin(), lastx = x.end();
@@ -461,7 +494,8 @@ namespace STL {
          *
          *  x变为空链表，需要this != x
          */
-        void splice(const_iterator pos, list&& x) noexcept {
+        void splice(const_iterator pos, list&& x) noexcept
+        {
             if (!x.empty())
                 transfer(pos.M_const_cast(), x.begin(), x.end());
         }
@@ -473,7 +507,8 @@ namespace STL {
          *
          *  pos和i可指向同一个list
          */
-        void splice(const_iterator pos, list&&, const_iterator i) noexcept {
+        void splice(const_iterator pos, list&&, const_iterator i) noexcept
+        {
             iterator j = i.M_const_cast();
             ++j;
             if (pos == i || pos == j)   return;
@@ -487,7 +522,8 @@ namespace STL {
          *
          *  pos和[first, last)可指向同一个list，若pos在[first, last)之内则未定义
          */ 
-        void splice(const_iterator pos, list&&, const_iterator first, const_iterator last) noexcept {
+        void splice(const_iterator pos, list&&, const_iterator first, const_iterator last) noexcept
+        {
             if (first != last)
                 transfer(pos.M_const_cast(), first.M_const_cast(), last.M_const_cast());
         }
@@ -499,7 +535,8 @@ namespace STL {
          *
          *  用operator==比较元素与x
          */ 
-        void remove(const value_type& x) {
+        void remove(const value_type& x)
+        {
             for (iterator first = begin(); first != end(); ) {
                 iterator next = first;
                 ++next;
@@ -514,7 +551,8 @@ namespace STL {
          *  e.g. list.remove_if([](value_type n){ return cmp(n, constant); });
          */ 
         template <class UnaryPredicate>
-        void remove_if(UnaryPredicate p) {
+        void remove_if(UnaryPredicate p)
+        {
             for (iterator first = begin(); first != end(); ) {
                 iterator next = first;
                 ++next;
@@ -526,7 +564,8 @@ namespace STL {
         /**
          *  @brief  将list逆序
          */ 
-        void reverse() noexcept {
+        void reverse() noexcept
+        {
             // 空链表或仅有一个元素，直接返回
             if (node->next == node || node->next->next == node) return;
             iterator first = begin();
@@ -543,7 +582,8 @@ namespace STL {
          *
          *  用operator==比较元素 
          */ 
-        void unique() {
+        void unique()
+        {
             iterator first = begin();
             iterator last = end();
             if (first == last)  return; // 空链表
@@ -557,7 +597,8 @@ namespace STL {
 
         // 用二元谓词p比较元素
         template <class BinaryPredicate>
-        void unique(BinaryPredicate p) {
+        void unique(BinaryPredicate p)
+        {
             iterator first = begin();
             iterator last = end();
             if (first == last)  return; // 空链表
@@ -576,7 +617,8 @@ namespace STL {
          *
          *  https://www.zhihu.com/question/31478115
          */ 
-        void sort() {
+        void sort()
+        {
             // 空链表或仅有一个元素，直接返回
             if (node->next == node || node->next->next == node) return;
             // 一些新的list作为数据缓冲区

@@ -9,11 +9,12 @@ using std::endl;
 #include "alloc.h"
 #include "construct.h"
 
-namespace STL {
-    
-    // 空间配置器allocator
+namespace STL
+{    
+    // 空间分配器allocator
     template <class T, class Alloc>
-    class allocator {
+    class allocator
+    {
     public:
         using value_type        = T;
         using pointer           = T*;
@@ -25,12 +26,14 @@ namespace STL {
 
         // rebind allocator of type U
         template <class U>
-        struct rebind {
+        struct rebind
+        {
             typedef allocator<U, Alloc> other;
         };
 
         static pointer allocate() { return (T*)Alloc::allocate(sizeof(T)); }
-        static pointer allocate(size_t n) {
+        static pointer allocate(size_t n)
+        {
             if (n > max_size())
                 THROW_BAD_ALLOC();
             return 0 == n ? 0 : (T*)Alloc::allocate(sizeof(T) * n);

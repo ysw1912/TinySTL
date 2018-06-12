@@ -1,10 +1,12 @@
 #ifndef TINYSTL_TYPE_TRAITS_H_
 #define TINYSTL_TYPE_TRAITS_H_ 
 
-namespace STL {
+namespace STL
+{
 
     template <class T, T v>
-    struct integral_constant {
+    struct integral_constant
+    {
         static constexpr T value = v;
         typedef T                       value_type;
         typedef integral_constant<T, v> type;

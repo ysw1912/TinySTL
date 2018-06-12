@@ -7,10 +7,12 @@
 
 using std::pair;
 
-namespace STL {
+namespace STL
+{
 
     template <class Value>
-    struct hashtable_node {
+    struct hashtable_node
+    {
         hashtable_node* next;
         Value val;
     };
@@ -19,8 +21,8 @@ namespace STL {
     class hashtable;
 
     template <class Value, class Key, class HashFcn, class ExtractKey, class Equal, class Alloc>
-    struct hashtable_iterator {
-
+    struct hashtable_iterator
+    {
         using Node              = hashtable_node<Value>;
         using Hashtable         = hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>;
         using iterator          = hashtable_iterator<Value, Key, HashFcn, ExtractKey, Equal, Alloc>;
@@ -41,7 +43,8 @@ namespace STL {
         reference operator*() const { return cur->val; }
         pointer operator->() const { return &(operator*()); }
         
-        iterator& operator++() {
+        iterator& operator++() 
+        {
             const Node* old = cur;
             cur = cur->next;
             if (cur == nullptr) {
@@ -53,7 +56,8 @@ namespace STL {
             return *this;
         }  
 
-        iterator operator++(int) {
+        iterator operator++(int) 
+        {
             iterator tmp = *this;
             ++*this;
             return tmp;
@@ -64,8 +68,8 @@ namespace STL {
     };
 
     template <class Value, class Key, class HashFcn, class ExtractKey, class Equal, class Alloc>
-    struct hashtable_const_iterator {
-
+    struct hashtable_const_iterator 
+    {
         using Node              = hashtable_node<Value>;
         using Hashtable         = hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>;
         using iterator          = hashtable_iterator<Value, Key, HashFcn, ExtractKey, Equal, Alloc>;
@@ -88,7 +92,8 @@ namespace STL {
         reference operator*() const { return cur->val; }
         pointer operator->() const { return &(operator*()); }
         
-        const_iterator& operator++() {
+        const_iterator& operator++()
+        {
             const Node* old = cur;
             cur = cur->next;
             if (cur == nullptr) {
@@ -100,7 +105,8 @@ namespace STL {
             return *this;
         }  
 
-        const_iterator operator++(int) {
+        const_iterator operator++(int)
+        {
             iterator tmp = *this;
             ++*this;
             return tmp;
@@ -119,7 +125,8 @@ namespace STL {
     };
 
     // 找出最接近并大于等于n的质数
-    inline unsigned long next_prime(unsigned long n) {
+    inline unsigned long next_prime(unsigned long n)
+    {
         const unsigned long* first = prime_list;
         const unsigned long* last = prime_list + num_primes;
         const unsigned long* pos = STL::lower_bound(first, last, n);
@@ -132,15 +139,16 @@ namespace STL {
      *
      *  @tparam  Value      节点的实值类型
      *  @tparam  Key        节点的键值类型
+     *  @tparam  HashFcn    hahs函数类型
      *  @tparam  ExtractKey 从节点中取出Key的函数对象
      *  @tparam  Equal      判断键值是否相同的函数对象
-     *  @tparam  Hash       hash函数类型
      *  @tparam  Alloc      空间分配器
      *
      */ 
     template <class Value, class Key, class HashFcn,
               class ExtractKey, class Equal, class Alloc>
-    class hashtable {
+    class hashtable
+    {
         using Node              = hashtable_node<Value>;
         using Bucket_type       = STL::vector<Node*, Alloc>;
 
@@ -181,7 +189,8 @@ namespace STL {
     protected:
         // 创建节点 = 分配内存 + 构造节点
         template <class... Args>
-        Node* create_node(Args&&... args) {
+        Node* create_node(Args&&... args)
+        {
             Node* n = get_node();
             n->next = nullptr;
             try {
@@ -193,13 +202,15 @@ namespace STL {
         }
 
         // 删除节点 = 析构节点 + 释放内存
-        void drop_node(Node* n) {
+        void drop_node(Node* n)
+        {
             STL::destroy(&n->val);
             put_node(n);
         }
 
         // 初始化next_prime(n)个桶，将其全部填0 
-        void initialize_buckets(size_type n) {
+        void initialize_buckets(size_type n)
+        {
             const size_type n_buckets = next_prime(n);
             buckets.reserve(n_buckets);
             buckets.insert(buckets.end(), n_buckets, static_cast<Node*>(nullptr));
@@ -207,7 +218,8 @@ namespace STL {
         }
 
         // 复制
-        void copy_from(const hashtable& ht) {
+        void copy_from(const hashtable& ht)
+        {
             buckets.clear();    // 请空buckets vector 
             buckets.reserve(ht.buckets.size());
             buckets.insert(buckets.end(), ht.buckets.size(), static_cast<Node*>(nullptr));
@@ -273,7 +285,8 @@ namespace STL {
         /**
          *  @brief  copy assignment
          */
-        hashtable& operator=(const hashtable& ht) {
+        hashtable& operator=(const hashtable& ht)
+        {
             if (this != &ht) {
                 clear();
                 hash = ht.hash;
@@ -293,7 +306,8 @@ namespace STL {
         // 判断是否需要重建table
         // 将节点个数（计入新增节点）与bucket vector的大小对比，若前者大于后者，则重建table
         // 因此每个bucket（链表）的最大容量与bucket vector的大小相同
-        void resize(size_type num_elements_hint) {
+        void resize(size_type num_elements_hint)
+        {
             const size_type old_n = buckets.size();
             if (num_elements_hint > old_n) {    // 需要重新配置table
                 const size_type n = next_prime(num_elements_hint);
@@ -332,7 +346,8 @@ namespace STL {
     
     public:
         // 迭代器
-        iterator begin() {
+        iterator begin()
+        {
             // 找到第一个非空的桶，获取第一个节点
             for (size_type i = 0; i < buckets.size(); ++i)
                 if (buckets[i])
@@ -340,7 +355,8 @@ namespace STL {
             return end();
         } 
         
-        const_iterator begin() const {
+        const_iterator begin() const
+        {
             for (size_type i = 0; i < buckets.size(); ++i)
                 if (buckets[i])
                     return const_iterator(buckets[i], this);
@@ -363,7 +379,8 @@ namespace STL {
        
     protected:
         // 不需要重建table的情况下插入新节点，键值不允许重复
-        pair<iterator, bool> insert_unique_noresize(const value_type& x) {
+        pair<iterator, bool> insert_unique_noresize(const value_type& x)
+        {
             const size_type n = bkt_num(x);     // x应位于#n bucket 
             Node* first = buckets[n];
             // buckets[n]被占用
@@ -380,7 +397,8 @@ namespace STL {
         }
 
         // 不需要重建table的情况下插入新节点，键值允许重复
-        iterator insert_equal_noresize(const value_type& x) {
+        iterator insert_equal_noresize(const value_type& x)
+        {
             const size_type n = bkt_num(x);     // x应位于#n bucket 
             Node* first = buckets[n];
             // buckets[n]被占用
@@ -404,13 +422,15 @@ namespace STL {
         // 插入来自范围[first, last)的元素，键值不允许重复
         // input_iterator版本
         template <class InputIterator>
-        void insert_unique(InputIterator first, InputIterator last, STL::input_iterator_tag) {
+        void insert_unique(InputIterator first, InputIterator last, STL::input_iterator_tag) 
+        {
             for ( ; first != last; ++first)
                 insert_unique(*first);
         } 
         // forward_iterator版本
         template <class ForwardIterator>
-        void insert_unique(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) {
+        void insert_unique(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) 
+        {
             size_type n = STL::distance(first, last);
             resize(num_elements + n);
             for ( ; n; --n, ++first)
@@ -420,13 +440,15 @@ namespace STL {
         // 插入来自范围[first, last)的元素，键值允许重复
         // input_iterator版本
         template <class InputIterator>
-        void insert_equal(InputIterator first, InputIterator last, STL::input_iterator_tag) {
+        void insert_equal(InputIterator first, InputIterator last, STL::input_iterator_tag) 
+        {
             for ( ; first != last; ++first)
                 insert_equal(*first);
         } 
         // forward_iterator版本
         template <class ForwardIterator>
-        void insert_equal(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) {
+        void insert_equal(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag) 
+        {
             size_type n = STL::distance(first, last);
             resize(num_elements + n);
             for ( ; n; --n, ++first)
@@ -439,7 +461,8 @@ namespace STL {
         /**
          *  @brief  清除hashtable所有元素
          */ 
-        void clear() {
+        void clear() 
+        {
             for (size_type i = 0; i < buckets.size(); ++i) {
                 Node* cur = buckets[i];
                 while (cur) {
@@ -459,7 +482,8 @@ namespace STL {
          *           iterator  若成功，指向新增节点；若失败，指向重复节点
          *           bool      插入是否成功
          */  
-        pair<iterator, bool> insert_unique(const value_type& x) {
+        pair<iterator, bool> insert_unique(const value_type& x) 
+        {
             resize(num_elements + 1);
             return insert_unique_noresize(x);
         }
@@ -475,7 +499,8 @@ namespace STL {
          *  @brief  插入元素x，允许重复
          *  @return  iterator  指向新增节点
          */
-        iterator insert_equal(const value_type& x) {
+        iterator insert_equal(const value_type& x) 
+        {
             resize(num_elements + 1);
             return insert_equal_noresize(x);
         }
@@ -490,7 +515,8 @@ namespace STL {
         /**
          *  @brief  移除位于pos的节点
          */ 
-        iterator erase(const_iterator pos) {
+        iterator erase(const_iterator pos) 
+        {
             return iterator(0, this);
         }
 
@@ -499,7 +525,8 @@ namespace STL {
          *
          *  必须是*this中的合法范围
          */
-        iterator erase(const_iterator first, const_iterator last) {
+        iterator erase(const_iterator first, const_iterator last) 
+        {
         
             return iterator(0, this);
         }
@@ -508,7 +535,8 @@ namespace STL {
          *  @brief  移除键值等于k的节点
          *  @return  移除的节点个数
          */
-        size_type erase(const key_type& k) {
+        size_type erase(const key_type& k) 
+        {
             const size_type n = bkt_num_key(k);
             Node** first = &buckets[n]; // 使用二级指针避免对头结点的另行处理
             size_type erased = 0;
@@ -528,7 +556,8 @@ namespace STL {
         /**
          *  @brief  与另一个hashtable交换数据
          */ 
-        void swap(hashtable& ht) {
+        void swap(hashtable& ht) 
+        {
             STL::swap(hash, ht.hash);
             STL::swap(equal, ht.equal);
             STL::swap(get_key, ht.get_key);
@@ -542,7 +571,8 @@ namespace STL {
         /**
          *  @brief  返回键值为k的节点个数
          */
-        size_type count(const key_type& k) const {
+        size_type count(const key_type& k) const 
+        {
             const size_type n = bkt_num_key(k);
             size_type result = 0;
             for (const Node* cur = buckets[n]; cur; cur = cur->next)
@@ -554,7 +584,8 @@ namespace STL {
         /**
          *  @brief  返回指向键值为k的节点的迭代器
          */ 
-        iterator find(const key_type& k) {
+        iterator find(const key_type& k) 
+        {
             const size_type n = bkt_num_key(k);
             Node* first;
             for (first = buckets[n];
@@ -571,7 +602,8 @@ namespace STL {
         /**
          *  @brief  第n个桶中的节点个数
          */ 
-        size_type bucket_size(size_type n) const {
+        size_type bucket_size(size_type n) const 
+        {
             size_type result = 0;
             for (Node* cur = buckets[n]; cur; cur = cur->next)
                 ++result;
