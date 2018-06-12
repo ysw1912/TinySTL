@@ -222,7 +222,7 @@ namespace STL
         }
  
         // 析构一个节点并释放空间
-        void destroy_node(Node* p)
+        void drop_node(Node* p)
         {
             STL::destroy(&p->data);
             put_node(p);
@@ -235,7 +235,7 @@ namespace STL
             while (cur != node) {
                 Node* tmp = cur;
                 cur = cur->next;
-                destroy_node(tmp);
+                drop_node(tmp);
             }
         }
     
@@ -296,6 +296,34 @@ namespace STL
         }
 
         /**
+         *  @brief  copy assignment
+         */
+        list& operator=(const list& x)
+        {
+            if (this != &x) {
+                iterator first = begin(), last = end();
+                const_iterator firstx = x.begin(), lastx = x.end();
+                for ( ; first != last && firstx != lastx; ++first, ++firstx)
+                    *first = *firstx;
+                if (firstx == lastx)
+                    erase(first, last);
+                else 
+                    insert(last, firstx, lastx);
+            }
+            return *this;
+        }
+
+        /**
+         *  @brief  move assignment
+         */
+        list& operator=(list&& x)
+        {
+            clear();
+            swap(x);
+            return *this;
+        }
+
+        /**
          *  @brief  destructor
          *
          *  若data是指针，不能消除所指对象
@@ -331,7 +359,7 @@ namespace STL
     protected:
         // 在pos位置插入新节点x
         template <class... Args>
-        iterator insert(iterator pos, Args&&... args)
+        iterator M_insert(iterator pos, Args&&... args)
         {
             Node* tmp = create_node(std::forward<Args>(args)...);
             tmp->next = pos.node;
@@ -355,33 +383,81 @@ namespace STL
         }
 
         /**
+         *  @brief  在pos前插入值为x的节点
+         *  @return  指向被插入节点的迭代器
+         */
+        iterator insert(const_iterator pos, const value_type& x)
+        { return M_insert(pos.M_const_cast(), x); }
+
+        /**
+         *  @brief  在pos前插入n个值为x的节点
+         *  @return  指向首个被插入节点的迭代器，若n==0则为pos
+         */ 
+        iterator insert(const_iterator pos, size_type n, const value_type& x)
+        {
+            if (n) {
+                list tmp(n, x);
+                iterator it = tmp.begin();
+                splice(pos, tmp);
+                return it;
+            }
+            return pos.M_const_cast();
+        }
+
+        /**
+         *  @brief  在pos前插入来自范围[first, last)的节点
+         *  @return  指向首个被插入节点的迭代器，若first==last则为pos
+         */
+        template <class InputIterator>
+        iterator insert(const_iterator pos, InputIterator first, InputIterator last)
+        {
+            list tmp(first, last);
+            if (!tmp.empty()) {
+                iterator it = tmp.begin();
+                splice(pos, tmp);
+                return it;
+            }
+            return pos.M_const_cast();
+        }
+
+        /**
          *  @brief  移除迭代器pos所指节点
          */ 
-        iterator erase(iterator pos)
+        iterator erase(const_iterator pos)
         {
             Node* next_node = pos.node->next;
             Node* prev_node = pos.node->prev;
             prev_node->next = next_node;
             next_node->prev = prev_node;
-            destroy_node(pos.node);
-            return (iterator)next_node;
+            drop_node(pos.M_const_cast().node);
+            return iterator(next_node);
+        }
+
+        /**
+         *  @brief  移除范围[first, last)中的节点
+         */ 
+        iterator erase(const_iterator first, const_iterator last)
+        {
+            while (first != last)
+                first = erase(first);
+            return last.M_const_cast();
         }
 
         /**
          *  @brief  在list尾部插入元素x
          */ 
-        void push_back(const value_type& x) { insert(end(), x); }
+        void push_back(const value_type& x) { M_insert(end(), x); }
 
         /**
          *  @brief  在list尾部移入元素x
          */ 
-        void push_back(value_type&& x) { insert(end(), std::move(x)); }
+        void push_back(value_type&& x) { M_insert(end(), std::move(x)); }
 
         /**
          *  @brief  在list尾部用args构造节点元素
          */ 
         template <class... Args>
-        void emplace_back(Args&&... args) { insert(end(), std::forward<Args>(args)...); }
+        void emplace_back(Args&&... args) { M_insert(end(), std::forward<Args>(args)...); }
 
         /**
          *  @brief  移除尾节点
@@ -391,23 +467,40 @@ namespace STL
         /**
          *  @brief  在list头部插入元素x
          */ 
-        void push_front(const value_type& x) { insert(begin(), x); }
+        void push_front(const value_type& x) { M_insert(begin(), x); }
     
         /**
          *  @brief  在list头部移入元素x
          */ 
-        void push_front(value_type&& x) { insert(begin(), std::move(x)); }
+        void push_front(value_type&& x) { M_insert(begin(), std::move(x)); }
 
         /**
          *  @brief  在list头部用args构造节点元素
          */ 
         template <class... Args>
-        void emplace_front(Args&&... args) { insert(begin(), std::forward<Args>(args)...); }
+        void emplace_front(Args&&... args) { M_insert(begin(), std::forward<Args>(args)...); }
 
         /**
          *  @brief  移除头节点
          */ 
         void pop_front() { erase(begin()); }
+
+        /**
+         *  @brief 
+         */ 
+        void resize(size_type new_size)
+        { resize(new_size, value_type()); }
+
+        void resize(size_type new_size, const value_type& x)
+        {
+            iterator i = begin();
+            size_type len = 0;
+            for ( ; i != end() && len < new_size; ++i, ++len);
+            if (len == new_size)
+                erase(i, end());
+            else    // i == end()
+                insert(end(), new_size - len, x);
+        }
 
         /** 
          *  @brief  与链表x交换数据
@@ -667,7 +760,32 @@ namespace STL
             }
             swap(tmp[fill - 1]);
         }
+
+    public:
+        // 比较符
+        template <class _T, class _Alloc>
+        friend bool operator==(const list<_T, _Alloc>& x, const list<_T, _Alloc>& y); 
+        
+        template <class _T, class _Alloc>
+        friend bool operator!=(const list<_T, _Alloc>& x, const list<_T, _Alloc>& y); 
     };
+
+    template <class T, class Alloc>
+    inline bool operator==(const list<T, Alloc>& x, const list<T, Alloc>& y)
+    {
+        using const_iterator = typename list<T, Alloc>::const_iterator;
+        const_iterator end1 = x.end(), end2 = y.end();
+        const_iterator i1 = x.begin(), i2 = y.begin();
+        while (i1 != end1 && i2 != end2 && *i1 == *i2) {
+            ++i1;
+            ++i2;
+        }
+        return i1 == end1 && i2 == end2;
+    }
+
+    template <class T, class Alloc>
+    inline bool operator!=(const list<T, Alloc>& x, const list<T, Alloc>& y)
+    { return !(x == y); }
     
 } /* namespace STL */ 
 

@@ -1,5 +1,5 @@
 /*************************************************************************
-    > File Name: testVector.cpp
+    > File Name: test_vector.cpp
     > Author: Stewie
     > E-mail: 793377164@qq.com
     > Created Time: 2018-05-22
@@ -33,27 +33,33 @@ void test_case1()
 {
     cout << "<test_case01>" << endl;
 
-    myVec<Widget> v1;       Print(v1);
-    myVec<Widget> v2(10);   Print(v2);
+    myVec<Widget> v0;
+    myVec<Widget> v1(10);
+    myVec<Widget> v2(10, {123, "ysw"});
+    Print(v0, v1, v2);
 
-    myVec<string> v3{"aaa", "bbb", "ccc", "ddd"};   Print(v3);
-    myVec<string> v4(v3.begin(), v3.end());         Print(v4);
+    myVec<string> v3{"aaa", "bbb", "ccc", "ddd"};
+    myVec<string> v4(v3.begin(), v3.end());
+    Print(v3, v4);
     assert(Container_Equal(v3, v4));
 
     myVec<string> v5(v3);
     myVec<string> v6(v4);
     assert(Container_Equal(v5, v6));
 
-    myVec<string> v7(std::move(v3));    Print(v3);
-    myVec<string> v8(std::move(v4));    Print(v4);
+    myVec<string> v7(std::move(v3));
+    myVec<string> v8(std::move(v4));
+    Print(v3, v4);
     assert(Container_Equal(v7, v8));
 
-    v3 = v7;                            Print(v3);
-    v4 = std::move(v8);                 Print(v4);
+    v3 = v7;              
+    v4 = std::move(v8);   
+    Print(v3, v4);
     assert(Container_Equal(v3, v4));
 
-    v3.assign(5, "ysw");                Print(v3);
-    v4.assign(v3.begin(), v3.end());    Print(v4);
+    v3.assign(5, "ysw");  
+    v4.assign(v3.begin(), v3.end());
+    Print(v3, v4);
     assert(Container_Equal(v3, v4));
 }
 
@@ -64,15 +70,16 @@ void test_case2()
 
     myVec<Widget> v1;
     stdVec<Widget> v2;
-    init_Widget_vector(v1);     Print(v1);
-    init_Widget_vector(v2);     Print(v2);
+    init_Widget_vector(v1); 
+    init_Widget_vector(v2); 
+    Print(v1, v2);
     assert(Container_Equal(v1, v2));  
     
     v1.front() = v2.front() = {12.3, "aaa"};
     v1[1] = v2[1] = {45.6, "bbb"};
     v1.at(2) = v2.at(2) = {78.9, "ccc"};
     v1.back() = v2.back() = {0, "ysw"};
-    Print(v1);  Print(v2);
+    Print(v1, v2);
     assert(Container_Equal(v1, v2));  
 }
 
@@ -93,8 +100,9 @@ void test_case3()
     }
     
     --i;
-    for (myVec<int>::const_iterator cit = v.cend() - 1; cit != v.cbegin(); --cit, --i) {
+    for (myVec<int>::const_iterator cit = v.cend() - 1; ; --cit, --i) {
         assert(*cit == i * 2);
+        if (cit == v.cbegin())  break;
     }
 }
 
@@ -133,16 +141,18 @@ void test_case5()
 
     myVec<Widget> v1;
     stdVec<Widget> v2;
-    init_Widget_vector(v1);     Print(v1);
-    init_Widget_vector(v2);     Print(v2);
+    init_Widget_vector(v1);
+    init_Widget_vector(v2);
+    Print(v1, v2);
     assert(Container_Equal(v1, v2));
 
     v1.push_back({12.3, "aaa"});    v1.emplace_back(45.6, "bbb"); 
     v2.push_back({12.3, "aaa"});    v2.emplace_back(45.6, "bbb");
     v1.emplace(v1.begin(), 0, "ysw");
     v2.emplace(v2.begin(), 0, "ysw");
-    v1.pop_back();  Print(v1);
-    v2.pop_back();  Print(v2);
+    v1.pop_back();
+    v2.pop_back();
+    Print(v1, v2);
     assert(Container_Equal(v1, v2));
 }
 
@@ -184,8 +194,9 @@ void test_case7()
     cout << "<test_case07>" << endl;
 
     myVec<Widget> v1, v2;
-    init_Widget_vector(v1);     Print(v1);
-    init_Widget_vector(v2);     Print(v2);
+    init_Widget_vector(v1); 
+    init_Widget_vector(v2); 
+    Print(v1, v2);
     assert(v1 == v2);
     assert(!(v1 != v2));
 }

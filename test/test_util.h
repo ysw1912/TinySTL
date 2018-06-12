@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 
 #include "profiler.h"
 
@@ -22,6 +23,7 @@ struct Widget
 
     Widget() { }
     Widget(double _d, string _s) : d(_d), s(_s) { }
+    Widget(const Widget& x) : d(x.d), s(x.s) { }
 
     bool operator==(const Widget& x) const
     { return d == x.d && s == x.s; }
