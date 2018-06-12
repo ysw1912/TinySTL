@@ -6,6 +6,9 @@
 #include <assert.h>
 #include <cstdlib>
 #include <ctime>
+
+#include "profiler.h"
+
 using std::cout;
 using std::endl;
 using std::ostream;

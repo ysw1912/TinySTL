@@ -24,10 +24,14 @@ void init_Widget_vector(Container& v)
     }
 }
 
+Profiler::TimePoint Profiler::start;
+Profiler::TimePoint Profiler::finish;
+Profiler::SecDuration Profiler::duration;
+
 // 构造/拷贝构造/移动构造/赋值函数、拷贝/移动赋值操作符
 void test_case1()
 {
-    cout << "test_case1" << endl;
+    cout << "<test_case01>" << endl;
 
     myVec<Widget> v1;       Print(v1);
     myVec<Widget> v2(10);   Print(v2);
@@ -56,7 +60,7 @@ void test_case1()
 // 元素访问
 void test_case2()
 {
-    cout << "test_case2" << endl;
+    cout << "<test_case02>" << endl;
 
     myVec<Widget> v1;
     stdVec<Widget> v2;
@@ -75,7 +79,7 @@ void test_case2()
 // 迭代器
 void test_case3()
 {
-    cout << "test_case3" << endl;
+    cout << "<test_case03>" << endl;
 
     myVec<int> v;
     int i;
@@ -97,7 +101,7 @@ void test_case3()
 // 容量
 void test_case4() 
 {
-    cout << "test_case4" << endl;
+    cout << "<test_case04>" << endl;
 
     myVec<int> v(100);
     assert(v.size() == 100);
@@ -125,7 +129,7 @@ void test_case4()
 // push_back()、emplace_back()、emplace()、pop_back()
 void test_case5()
 {
-    cout << "test_case5" << endl;
+    cout << "<test_case05>" << endl;
 
     myVec<Widget> v1;
     stdVec<Widget> v2;
@@ -145,7 +149,7 @@ void test_case5()
 // insert()、erase()
 void test_case6()
 {
-    cout << "test_case6" << endl;
+    cout << "<test_case06>" << endl;
 
     myVec<int> v1, v3;
     stdVec<int> v2, v4;
@@ -177,7 +181,7 @@ void test_case6()
 // 友元函数
 void test_case7()
 {
-    cout << "test_case7" << endl;
+    cout << "<test_case07>" << endl;
 
     myVec<Widget> v1, v2;
     init_Widget_vector(v1);     Print(v1);
@@ -197,7 +201,28 @@ void test_all_cases()
     test_case7();
 }
 
+// 性能测试
+void test_performance()
+{
+    cout << "<test_performance>" << endl;
+
+    myVec<int> v1;
+    Profiler::Start();
+    for (int i = 0; i < 10000000; ++i)
+        v1.push_back(i);
+    Profiler::Finish();
+    Profiler::dumpDuration();
+    
+    stdVec<int> v2;
+    Profiler::Start();
+    for (int i = 0; i < 10000000; ++i)
+        v2.push_back(i);
+    Profiler::Finish();
+    Profiler::dumpDuration();
+}
+
 int main() {
     test_all_cases();
+    test_performance();
     return 0;
 }
