@@ -138,7 +138,7 @@ namespace STL
                 ForwardIterator mid = first;
                 STL::advance(mid, size());
                 STL::copy(first, mid, start);
-                finish = uninitialized_copy(mid, last, finish);
+                finish = STL::uninitialized_copy(mid, last, finish);
             } else {
                 erase_at_end(STL::copy(first, last, start));
             }
@@ -390,7 +390,7 @@ namespace STL
                     pointer new_finish(new_start);
                     try {
                         // 将新增元素(n个x)填入vector
-                        new_finish = STL::uninitialized_fill_n(new_start, n, x);
+                        new_finish = STL::uninitialized_fill_n(new_start + elems_before, n, x);
 
                         new_finish = pointer();
                         // 将旧vector插入点之前的元素复制
@@ -600,6 +600,13 @@ namespace STL
             return start + offset;
         }
 
+        iterator insert(const_iterator pos, std::initializer_list<value_type> l)
+        { 
+            difference_type offset = pos - cbegin();
+            range_insert(begin() + offset, l.begin(), l.end(), STL::random_access_iterator_tag());
+            return start + offset;
+        }
+
         /**
          *  @brief  在pos前构造元素args
          */ 
@@ -686,6 +693,23 @@ namespace STL
             --finish;
             destroy(finish);
         }
+
+        /**
+         *  @brief  重设vector大小以容纳new_size个元素
+         *
+         *  若new_size大于当前大小，则后附额外的x副本
+         *  若new_size小于当前大小，则减小vector为其首的new_size个元素
+         */
+        void resize(size_type new_size)
+        { resize(new_size, value_type()); }
+
+        void resize(size_type new_size, const value_type& x)
+        {
+            if (new_size > size())
+                insert(finish, new_size - size(), x);
+            else if (new_size < size())
+                erase_at_end(start + new_size);
+        }
        
         /**
          *  @brief  和vector x交换数据内容
@@ -693,8 +717,34 @@ namespace STL
         void swap(vector& x) 
         {
             swap_data(x);
-        } 
+        }
+
+    public:
+        // 友元
+        template <class _T, class _Alloc>
+        friend bool operator==(const vector<_T, _Alloc>& x, const vector<_T, _Alloc>& y);
+
+        template <class _T, class _Alloc>
+        friend bool operator!=(const vector<_T, _Alloc>& x, const vector<_T, _Alloc>& y);
     };
+
+    template <class T, class Alloc>
+    bool operator==(const vector<T, Alloc>& x, const vector<T, Alloc>& y)
+    {
+        if (x.size() != y.size())
+            return false;
+        auto firstx = x.begin(), lastx = x.end();
+        auto firsty = y.begin(), lasty = y.end();
+        for ( ; firstx != lastx && firsty != lasty; ++firstx, ++firsty) {
+            if (*firstx != *firsty)
+                return false;
+        }
+        return true;
+    }
+
+    template <class T, class Alloc>
+    bool operator!=(const vector<T, Alloc>& x, const vector<T, Alloc>& y)
+    { return !(x == y); }
 
 } /* namespace STL */
 
