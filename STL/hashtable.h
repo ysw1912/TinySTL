@@ -380,7 +380,7 @@ namespace STL
         size_type max_size() const { return node_allocator::max_size(); }
         bool empty() const { return num_elements == 0; }
        
-    protected:
+    public:
         // 不需要重建table的情况下插入新节点，键值不允许重复
         pair<iterator, bool> insert_unique_noresize(const value_type& x)
         {
@@ -650,6 +650,27 @@ namespace STL
         }
 
         /**
+         *  @brief  查找实值为x的节点，若没有则插入
+         *  @return  返回其引用
+         */ 
+        reference find_or_insert(const value_type& x)
+        {
+            resize(num_elements + 1);
+            
+            size_type n = bkt_num(x);
+            Node* first = buckets[n];
+            for (Node* cur = first; cur; cur = cur->next)
+                if (equal(get_key(cur->val), get_key(x)))
+                    return cur->val;
+
+            Node* tmp = create_node(x);
+            tmp->next = first;
+            buckets[n] = tmp;
+            ++num_elements;
+            return tmp->val;
+        }
+
+        /**
          *  @brief  返回指向键值为k的节点的迭代器
          */ 
         iterator find(const key_type& k) 
@@ -735,7 +756,20 @@ namespace STL
          */ 
         float load_factor() const noexcept
         { return static_cast<float>(size()) / static_cast<float>(bucket_count()); }
-    
+
+    public:
+        // 观察器
+        
+        /**
+         *  @brief  返回哈希函数
+         */ 
+        hasher hash_function() const { return hash; }
+        
+        /**
+         *  @brief  返回键值相等性函数
+         */
+        key_equal key_eq() const { return equal; }
+
     public:
         // 比较符
         template <class _Value, class _Key, class _HashFcn, class _ExtractKey, class _Equal, class _Alloc>
