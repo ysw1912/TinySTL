@@ -91,7 +91,10 @@ namespace STL
 
         reference operator*() const { return cur->val; }
         pointer operator->() const { return &(operator*()); }
-        
+
+        iterator M_const_cast() const 
+        { return iterator(const_cast<Node*>(cur), const_cast<Hashtable*>(ht)); }
+
         const_iterator& operator++()
         {
             const Node* old = cur;
@@ -303,7 +306,7 @@ namespace STL
         ~hashtable() { clear(); }
 
     protected:
-        // 判断是否需要重建table
+        // 判断是否需要重建table，避免桶太少以至于冲突过多
         // 将节点个数（计入新增节点）与bucket vector的大小对比，若前者大于后者，则重建table
         // 因此每个bucket（链表）的最大容量与bucket vector的大小相同
         void resize(size_type num_elements_hint)
@@ -455,6 +458,38 @@ namespace STL
                 insert_equal_noresize(*first);
         }
 
+        // 移除 #n bucket 内[first, last)范围的节点
+        void erase_bucket(const size_type n, Node* first, Node* last) 
+        {
+            Node* cur = buckets[n];
+            // 头节点特殊处理
+            if (cur == first)
+                erase_bucket(n, last);
+            else {
+                Node* next;
+                for (next = cur->next; next != first; cur = next, next = cur->next);
+                while (next != last) {
+                    cur->next = next->next;
+                    drop_node(next);
+                    next = cur->next;
+                    --num_elements;
+                }
+            }
+        }
+
+        // 移除 #n bucket 内[头节点, last)范围的节点
+        void erase_bucket(const size_type n, Node* last)
+        {
+            Node* cur = buckets[n];
+            while (cur != last) {
+                Node* next = cur->next;
+                drop_node(cur);
+                cur = next;
+                buckets[n] = cur;   // 调整 #n bucket 的指向
+                --num_elements;
+            }
+        }
+
     public:
         // 修改器
         
@@ -514,21 +549,54 @@ namespace STL
 
         /**
          *  @brief  移除位于pos的节点
+         *  @return  被移除节点的下一个节点的迭代器
          */ 
         iterator erase(const_iterator pos) 
         {
-            return iterator(0, this);
+            iterator position = pos.M_const_cast();
+            Node* p = position.cur;
+            if (p) {
+                ++position;
+                const size_type n = bkt_num(p->val);
+                Node** first = &buckets[n];     // 找到pos对应的桶
+                while (*first) {
+                    Node* cur = *first;
+                    if (cur == p) {
+                        *first = cur->next;
+                        drop_node(cur);
+                        --num_elements;
+                        break;
+                    } else 
+                        first = &(cur->next);
+                }
+            }
+            return position;
         }
 
         /**
          *  @brief  移除范围[first, last)中的节点
+         *  @return  last迭代器
          *
          *  必须是*this中的合法范围
          */
         iterator erase(const_iterator first, const_iterator last) 
         {
-        
-            return iterator(0, this);
+            iterator f = first.M_const_cast(), l = last.M_const_cast();
+            size_type f_bucket = f.cur ? bkt_num(f.cur->val) : buckets.size();
+            size_type l_bucket = l.cur ? bkt_num(l.cur->val) : buckets.size();
+            if (f.cur == l.cur)
+                return l;
+            else if (f_bucket == l_bucket)  // 删除区间位于同一个桶内
+                erase_bucket(f_bucket, f.cur, l.cur);
+            else {
+                // 区间内的每个桶作合适的删除
+                erase_bucket(f_bucket, f.cur, nullptr);
+                for (size_type n = f_bucket + 1; n < l_bucket; ++n)
+                    erase_bucket(n, nullptr);
+                if (l_bucket != buckets.size())
+                    erase_bucket(l_bucket, l.cur);
+            }
+            return l;
         }
 
         /**
@@ -594,6 +662,55 @@ namespace STL
             return iterator(first, this);
         }
 
+        /**
+         *  @brief  查找hashtable中键值为k的节点范围
+         *  @return  pair<iterator, iterator>
+         *           第一个指向范围的首节点
+         *           第二个指向范围的尾后一位节点
+         */ 
+        pair<iterator, iterator> equal_range(const key_type& k)
+        {
+            const size_type n = bkt_num_key(k);
+            for (Node* first = buckets[n]; first; first = first->next) {
+                // 找到键与k相同的第一个节点
+                if (equal(get_key(first->val), k)) {
+                    // 遍历该桶，若遇到键与k不同的节点立即返回
+                    for (Node* cur = first->next; cur; cur = cur->next)
+                        if (!equal(get_key(cur->val), k))
+                            return pair<iterator, iterator>(iterator(first, this),
+                                                            iterator(cur, this));
+                    // 该桶从first到链尾的键都等于k
+                    for (size_type m = n + 1; m < buckets.size(); ++m)
+                        if (buckets[m])
+                            return pair<iterator, iterator>(iterator(first, this),
+                                                            iterator(buckets[m], this));
+                    return pair<iterator, iterator>(iterator(first, this),
+                                                    end());
+                }
+            }
+            return pair<iterator, iterator>(end(), end());
+        }
+
+        pair<const_iterator, const_iterator> equal_range(const key_type& k) const
+        {
+            const size_type n = bkt_num_key(k);
+            for (const Node* first = buckets[n]; first; first = first->next) {
+                if (equal(get_key(first->val), k)) {
+                    for (const Node* cur = first->next; cur; cur = cur->next)
+                        if (!equal(get_key(cur->val), k))
+                            return pair<const_iterator, const_iterator>(const_iterator(first, this),
+                                                                        const_iterator(cur, this));
+                    for (size_type m = n + 1; m < buckets.size(); ++m)
+                        if (buckets[m])
+                            return pair<const_iterator, const_iterator>(const_iterator(first, this),
+                                                                        const_iterator(buckets[m], this));
+                    return pair<const_iterator, const_iterator>(const_iterator(first, this),
+                                                                end());
+                }
+            }
+            return pair<const_iterator, const_iterator>(end(), end());
+        }
+
     public:
         // 桶接口
         size_type bucket_count() const { return buckets.size(); }
@@ -609,7 +726,50 @@ namespace STL
                 ++result;
             return result;
         }
+
+    public:
+        // 哈希策略
+        
+        /**
+         *  @brief  负载系数
+         */ 
+        float load_factor() const noexcept
+        { return static_cast<float>(size()) / static_cast<float>(bucket_count()); }
+    
+    public:
+        // 比较符
+        template <class _Value, class _Key, class _HashFcn, class _ExtractKey, class _Equal, class _Alloc>
+        friend bool operator==(const hashtable<_Value, _Key, _HashFcn, _ExtractKey, _Equal, _Alloc>& x,
+                               const hashtable<_Value, _Key, _HashFcn, _ExtractKey, _Equal, _Alloc>& y);
+        template <class _Value, class _Key, class _HashFcn, class _ExtractKey, class _Equal, class _Alloc>
+        friend bool operator!=(const hashtable<_Value, _Key, _HashFcn, _ExtractKey, _Equal, _Alloc>& x,
+                               const hashtable<_Value, _Key, _HashFcn, _ExtractKey, _Equal, _Alloc>& y);
     };
+
+    template <class Value, class Key, class HashFcn, class ExtractKey, class Equal, class Alloc>
+    bool operator==(const hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>& x,
+                    const hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>& y)
+    {
+        using Node = typename hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>::Node; 
+        if (x.buckets.size() != y.buckets.size())
+            return false;
+        for (int n = 0; n < x.buckets.size(); ++n) {
+            Node* cur1 = x.buckets[n];
+            Node* cur2 = y.buckets[n];
+            for ( ; cur1 && cur2 && cur1->val == cur2->val;
+                    cur1 = cur1->next, cur2 = cur2->next)
+            { }
+            if (cur1 || cur2)
+                return false;
+        }
+        return true;
+    }
+    
+    
+    template <class Value, class Key, class HashFcn, class ExtractKey, class Equal, class Alloc>
+    bool operator!=(const hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>& x,
+                           const hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>& y)
+    { return !(x == y); }
 
 } /* namespace STL */
 
