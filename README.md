@@ -23,10 +23,10 @@
 6. `vector.h`
 
 7. `list.h`
-    - [链表排序详细分析](https://ysw1912.github.io/post/cc++/stl02/)
+    - [链表排序](https://ysw1912.github.io/post/cc++/stl02/)
 
 8. 基于`tree.h`的`set.h`和`map.h`
-      - [红黑树删除操作详细分析](https://ysw1912.github.io/post/cc++/stl01/)
+    - [红黑树删除节点](https://ysw1912.github.io/post/cc++/stl01/)
 
 9. 基于`hashtable.h`的`unordered_set.h`和`unordered_map.h`
 
