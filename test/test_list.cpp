@@ -321,10 +321,8 @@ void test_performance()
     l1.clear();
     l2.clear();
 
-    std::default_random_engine dre;
-    std::uniform_int_distribution<int> uid;
     for (int i = 0; i != max; ++i) {
-        auto n = uid(dre);
+        int n = get_rand(-max, max);
         l1.push_back(n);
         l2.push_back(n);    
     }
@@ -341,7 +339,8 @@ void test_performance()
 
 }
 
-int main() {
+int main()
+{
     test_all_cases();
     test_performance();
     return 0;

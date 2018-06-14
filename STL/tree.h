@@ -510,7 +510,7 @@ namespace STL
         using reference         = value_type&;
         using const_reference   = const value_type&;
         using size_type         = size_t;
-        using difference_type    = ptrdiff_t;
+        using difference_type   = ptrdiff_t;
 
     protected:
         Link_type get_node() { return rb_tree_node_allocator::allocate(); }
@@ -725,7 +725,7 @@ namespace STL
         ~rb_tree() { erase_tree(M_begin()); }
 
     public:
-        // 元素访问
+        // 迭代器
         Compare key_cmp() const { return key_compare; }
         iterator begin() { return iterator(header.left); }
         const_iterator begin() const { return const_iterator(header.left); }
@@ -855,6 +855,13 @@ namespace STL
         {
             for ( ; first != last; ++first)
                 insert_unique(*first);
+        }
+
+        template <class InputIterator>
+        void insert_equal(InputIterator first, InputIterator last)
+        {
+            for ( ; first != last; ++first)
+                insert_equal(*first);
         }
 
         /**
@@ -1117,6 +1124,19 @@ namespace STL
             return true;
         }
     };
+
+    template <class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+    inline bool operator==(const rb_tree<Key, Value, KeyOfValue, Compare, Alloc>& x,
+                           const rb_tree<Key, Value, KeyOfValue, Compare, Alloc>& y)
+    {
+        return x.size() == y.size() &&
+                STL::equal(x.begin(), x.end(), y.begin());
+    }
+
+    template <class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+    inline bool operator!=(const rb_tree<Key, Value, KeyOfValue, Compare, Alloc>& x,
+                           const rb_tree<Key, Value, KeyOfValue, Compare, Alloc>& y)
+    { return !(x == y); }
 
 } /* namespace STL */
 

@@ -9,7 +9,8 @@
 
 using hashtable = STL::hashtable<int, int, std::hash<int>, std::_Identity<int>, std::equal_to<int>>;
 
-void PrintHt(const hashtable& ht) {
+void PrintHt(const hashtable& ht)
+{
     cout << "load_factor: " << ht.load_factor() << endl;
     cout << "bucket_count: " << ht.bucket_count() << endl;
     cout << "size: " << ht.size() << "  { ";
@@ -154,6 +155,8 @@ void test_case7()
 // 桶接口
 void test_case8()
 {
+    cout << "<test_case08>" << endl;
+
     hashtable ht(50);
     ht.insert_unique(59);
     ht.insert_unique(63);
@@ -201,7 +204,8 @@ void test_all_cases()
     test_case9();
 }
 
-int main() {
+int main()
+{
     test_all_cases();
     return 0;
 }

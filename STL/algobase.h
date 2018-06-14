@@ -219,6 +219,15 @@ namespace STL
     inline BidirectionalIterator2 copy_backward(BidirectionalIterator1 first, BidirectionalIterator1 last, BidirectionalIterator2 result)
     { return _copy_backward<BidirectionalIterator1, BidirectionalIterator2>()(first, last, result); }
 
+    template <class IIt1, class IIt2>
+    inline bool equal(IIt1 first1, IIt1 last1, IIt2 first2)
+    {
+        for ( ; first1 != last1; ++first1, ++first2)
+            if (*first1 != *first2)
+                return false;
+        return true;
+    }
+
 } /* namespace STL */ 
 
 #endif

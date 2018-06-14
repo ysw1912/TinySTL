@@ -232,7 +232,8 @@ void test_performance()
     Profiler::dumpDuration();
 }
 
-int main() {
+int main()
+{
     test_all_cases();
     test_performance();
     return 0;

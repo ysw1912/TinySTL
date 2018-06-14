@@ -2,9 +2,9 @@
 #define TINYSTL_TEST_UTIL_H_ 
 
 #include <iostream>
+#include <functional>
 #include <string>
 #include <assert.h>
-#include <cstdlib>
 #include <ctime>
 #include <random>
 
@@ -43,8 +43,8 @@ ostream& operator<<(ostream& os, const Widget& x)
 }
 
 // lambda
-auto WidgetGreater = [](const Widget& lhs, const Widget& rhs) { 
-    return lhs.d > rhs.d || (lhs.d == rhs.d && lhs.s > rhs.s); };
+auto WidgetLess = [](const Widget& lhs, const Widget& rhs) { 
+    return lhs.d < rhs.d || (lhs.d == rhs.d && lhs.s < rhs.s); };
 
 auto WidgetEqual = [](const Widget& lhs, const Widget& rhs) {
     return lhs.d == rhs.d && lhs.s == rhs.s; };
@@ -84,7 +84,11 @@ bool Container_Equal(const Container1& c1, const Container2& c2)
 // 获得[a, b]的随机整数
 inline int get_rand(int a, int b)
 {
-    return std::rand() % (b - a + 1) + a;
+    std::random_device rd;
+    std::default_random_engine engine(rd());
+    std::uniform_int_distribution<int> dis(a, b); 
+    auto dice = std::bind(dis, engine); // <functional>
+    return dice();
 }
 
 #endif
