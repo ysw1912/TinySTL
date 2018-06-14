@@ -706,36 +706,35 @@ namespace STL
         /**
          *  @brief  list排序，merge sort 
          *
-         *  <-！！！！！很有趣的算法！！！！！->
-         *
-         *  https://www.zhihu.com/question/31478115
+         *  https://ysw1912.github.io/post/cc++/stl02/
          */ 
         void sort()
         {
             // 空链表或仅有一个元素，直接返回
             if (node->next == node || node->next->next == node) return;
             // 一些新的list作为数据缓冲区
-            list carry;     // 每次取源list的头节点
-            list tmp[64];   // 64个桶，tmp[i]的大小为2^i
-            int fill = 0;   // 有元素的桶的最大index + 1
+            list carry;         // 每次取原list的头节点
+            list bucket[64];    // 64个桶，bucket[i]的大小为2^i
+            int fill = 0;       // 有元素的桶的最大index + 1
             while (!empty()) {
-                carry.splice(carry.begin(), *this, begin());    // 取源list的头节点
+                carry.splice(carry.begin(), *this, begin());    // 取原list的头节点
                 int i = 0;
                 // index < fill的桶未满时，不断向桶内搬运节点，桶内有序
-                // index < fill的桶全满时(i能==fill)，则将这些桶归并到carry，再存放到tmp[fill]
-                while (i < fill && !tmp[i].empty()) {
-                    carry.merge(tmp[i]);
+                // index < fill的桶全满时(i能==fill)，则将这些桶归并到carry，再存放到bucket[fill]
+                while (i < fill && !bucket[i].empty()) {
+                    carry.merge(bucket[i]);
                     ++i;
                 }
-                tmp[i].swap(carry);
-                // index < fill的桶全满，增加下一个桶
+                bucket[i].swap(carry);
+                // bucket[fill]已满，增加下一个桶
+                // 此时fill之前的桶可能未满
                 if (i == fill)  ++fill;
             }
             // 将所有桶归并
             for (int i = 1; i < fill; ++i) {
-                tmp[i].merge(tmp[i - 1]);
+                bucket[i].merge(bucket[i - 1]);
             }
-            swap(tmp[fill - 1]);
+            swap(bucket[fill - 1]);
         }
 
         // 自定义比较运算符
