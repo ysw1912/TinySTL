@@ -38,7 +38,7 @@
 
 2. `test_list.cpp`
 
-3. `test_tree.h`
+3. `test_tree.cpp`
 
 4. `test_hashtable.cpp`
 
