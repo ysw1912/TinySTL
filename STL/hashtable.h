@@ -787,7 +787,7 @@ namespace STL
         using Node = typename hashtable<Value, Key, HashFcn, ExtractKey, Equal, Alloc>::Node; 
         if (x.buckets.size() != y.buckets.size())
             return false;
-        for (int n = 0; n < x.buckets.size(); ++n) {
+        for (size_t n = 0; n < x.buckets.size(); ++n) {
             Node* cur1 = x.buckets[n];
             Node* cur2 = y.buckets[n];
             for ( ; cur1 && cur2 && cur1->val == cur2->val;

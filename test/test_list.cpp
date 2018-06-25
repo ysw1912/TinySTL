@@ -7,6 +7,7 @@
 #include <list>
 
 #include "../STL/list.h"
+#include "profiler.h"
 #include "test_util.h"
 
 template <class T>
@@ -23,10 +24,6 @@ void init_Widget_list(Container& l)
         l.emplace_back(i * 0.5, string(i, i + '0'));
     }
 }
-
-Profiler::TimePoint Profiler::start;
-Profiler::TimePoint Profiler::finish;
-Profiler::SecDuration Profiler::duration;
 
 // 构造/拷贝构造/移动构造/赋值函数、拷贝/移动赋值操作符
 void test_case1()

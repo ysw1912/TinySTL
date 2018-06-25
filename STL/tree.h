@@ -673,13 +673,13 @@ namespace STL
          *  @brief  constructor
          */ 
         explicit rb_tree(const Compare& cmp = Compare())
-        : header(), node_count(0), key_compare(cmp) { initialize(); }
+        : key_compare(cmp), header(), node_count(0) { initialize(); }
 
         /**
          *  @brief  copy constructor
          */ 
         rb_tree(const rb_tree& x)
-        : header(), node_count(x.node_count), key_compare(x.key_compare)
+        : key_compare(x.key_compare), header(), node_count(x.node_count)
         {
             if (x.root()) {
                 header.color = red;
@@ -694,7 +694,7 @@ namespace STL
          *  @brief  move constructor
          */ 
         rb_tree(rb_tree&& x)
-        : header(), node_count(x.node_count), key_compare(x.key_compare)
+        : key_compare(x.key_compare), header(), node_count(x.node_count)
         {
             if (x.root()) {
                 move_data(x);

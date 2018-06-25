@@ -4,18 +4,18 @@
     > E-mail: 793377164@qq.com
     > Created Time: 2018-05-22
 *************************************************************************/
-#include <vector>
+#include <deque>
 
-#include "../STL/vector.h"
+#include "../STL/deque.h"
 #include "profiler.h"
 #include "test_util.h"
 
 template <class T>
-using stdVec = std::vector<T>;
+using stdDeq = std::deque<T>;
 
 template <class T>
-using myVec = STL::vector<T>;
-
+using myDeq = STL::deque<T>;
+/*
 template <class Container>
 void init_Widget_vector(Container& v)
 {
@@ -24,22 +24,23 @@ void init_Widget_vector(Container& v)
         v.emplace_back(i * 0.5, string(i, i + '0'));
     }
 }
+*/ 
 
 // 构造/拷贝构造/移动构造/赋值函数、拷贝/移动赋值操作符
 void test_case1()
 {
     cout << "<test_case01>" << endl;
-
-    myVec<Widget> v0;
-    myVec<Widget> v1(10);
-    myVec<Widget> v2(10, {123, "ysw"});
-    Print(v0, v1, v2);
-
-    myVec<string> v3{"aaa", "bbb", "ccc", "ddd"};
-    myVec<string> v4(v3.begin(), v3.end());
-    Print(v3, v4);
-    assert(Container_Equal(v3, v4));
-
+    
+    myDeq<Widget> d0;
+    myDeq<Widget> d1(10);
+    myDeq<Widget> d2(10, {123, "ysw"});
+    Print(d0, d1, d2);
+    
+    myDeq<string> d3{"aaa", "bbb", "ccc", "ddd"};
+    myDeq<string> d4(d3.begin(), d3.end());
+    Print(d3, d4);
+    assert(Container_Equal(d3, d4));
+    /*
     myVec<string> v5(v3);
     myVec<string> v6(v4);
     assert(Container_Equal(v5, v6));
@@ -58,8 +59,9 @@ void test_case1()
     v4.assign(v3.begin(), v3.end());
     Print(v3, v4);
     assert(Container_Equal(v3, v4));
+    */
 }
-
+/*
 // 元素访问
 void test_case2()
 {
@@ -197,18 +199,18 @@ void test_case7()
     assert(v1 == v2);
     assert(!(v1 != v2));
 }
-
+*/ 
 void test_all_cases()
 {
     test_case1();
-    test_case2();
-    test_case3();
-    test_case4();
-    test_case5();
-    test_case6();
-    test_case7();
+  //  test_case2();
+ //   test_case3();
+ //   test_case4();
+//    test_case5();
+//    test_case6();
+//    test_case7();
 }
-
+/*
 // 性能测试
 void test_performance()
 {
@@ -228,10 +230,10 @@ void test_performance()
     Profiler::Finish();
     Profiler::dumpDuration();
 }
-
+*/ 
 int main()
 {
     test_all_cases();
-    test_performance();
+   //  test_performance();
     return 0;
 }

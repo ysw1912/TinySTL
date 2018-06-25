@@ -8,14 +8,11 @@
 
 #include "../STL/tree.h"
 #include "../STL/vector.h"
+#include "profiler.h"
 #include "test_util.h"
 
 using stdRbtree = std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>>;
 using myRbtree = STL::rb_tree<int, int, std::_Identity<int>, std::less<int>>;
-
-Profiler::TimePoint Profiler::start;
-Profiler::TimePoint Profiler::finish;
-Profiler::SecDuration Profiler::duration;
 
 // 判断红黑树相等，包括颜色比较
 // 第一个参数为std::_Rb_tree，第二个参数为自己实现的STL::rb_tree 

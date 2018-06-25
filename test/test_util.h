@@ -8,8 +8,6 @@
 #include <ctime>
 #include <random>
 
-#include "profiler.h"
-
 using std::cout;
 using std::endl;
 using std::ostream;
