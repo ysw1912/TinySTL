@@ -196,10 +196,10 @@ namespace STL
         { return deque_buf_size(sizeof(T)); }
 
     protected:
-        // 为节点分配buffer空间
+        // 分配buffer空间，返回T*
         pointer allocate_node()
         { return data_allocator::allocate(buffer_size()); }
-        // 将节点所指buffer释放
+        // 将T*所指buffer释放
         void deallocate_node(pointer p)
         { data_allocator::deallocate(p, buffer_size()); }
 
@@ -269,7 +269,7 @@ namespace STL
                 // 最后一个buffer单独设初值
                 STL::uninitialized_fill(finish.first, finish.cur, value);
             } catch(...) {
-                STL::destroy(start, iterator(*cur, cur));
+                destroy_data(start, iterator(*cur, cur));
                 throw;
             }
         }
@@ -305,7 +305,7 @@ namespace STL
                 }
                 STL::uninitialized_copy(first, last, finish.first);
             } catch(...) {
-                STL::destroy(start, iterator(*cur_node, cur_node));
+                destroy_data(start, iterator(*cur_node, cur_node));
                 throw;
             }
         }
@@ -347,6 +347,7 @@ namespace STL
             } else 
                 STL::destroy(first.cur, last.cur);
         }
+
     public:
         // The big five
         
@@ -490,13 +491,79 @@ namespace STL
     protected:
 
         // 被erase(q1, q2), resize(), clear(), operator=调用
+        // 移除pos开始的所有元素
         void erase_at_end(iterator pos)
         {
+            // 将[pos, finish)所有元素析构
             destroy_data(pos, end());
+            // 释放pos.node之后的所有buffer空间
             destroy_nodes(pos.node + 1, finish.node + 1);
+            // pos成为新的finish
             finish = pos;
         }
         
+        // 移除位于pos的元素
+        iterator M_erase(iterator pos)
+        {
+            iterator next = pos;
+            ++next;
+            const difference_type elems_before = pos - start;  // pos前元素个数
+            // pos之前的元素较少
+            if (static_cast<size_type>(elems_before) < size() / 2) {
+                // 后移pos之前的元素
+                if (pos != start)
+                    STL::copy_backward(start, pos, next);
+                // 去除最前一个元素
+                pop_front();
+            }
+            // pos之后的元素较少
+            else {
+                // 前移pos之后的元素
+                if (next != finish)
+                    STL::copy(next, finish, pos);
+                // 去除最后一个元素
+                pop_back();
+            }
+            return start + elems_before;
+        }
+
+        // 移除范围[first, last)的元素
+        iterator M_erase(iterator first, iterator last)
+        {
+            if (first == last)
+                return first;
+            // 移除区间就是整个deque
+            else if (first == start && last == finish) {
+                clear();
+                return finish;
+            }
+            else {
+                const difference_type n = last - first;
+                const difference_type elems_before = first - start;
+                // 移除区间之前的元素较少
+                if (static_cast<size_type>(elems_before) <= (size() - n) / 2) {
+                    // 后移前方元素
+                    if (first != start)
+                        STL::copy_backward(start, first, last);
+                    // erase_at_begin(start + n);
+                    iterator new_start = start + n;
+                    destroy_data(start, new_start); // 将前面多余元素析构
+                    // 将多余buffer释放
+                    destroy_nodes(start.node, new_start.node);
+                    start = new_start;
+                }
+                // 移除区间之后的元素较少
+                else {
+                    if (last != finish)
+                        STL::copy(last, finish, first);
+                    erase_at_end(finish - n);
+                }
+                return start + elems_before;
+            }
+        }
+
+    protected:
+
         // 在deque前端留出new_elems个元素的空间
         void new_elements_at_front(size_type new_elems)
         {
@@ -508,7 +575,7 @@ namespace STL
             size_type i;
             try {
                 for (i = 1; i <= new_nodes; ++i)
-                    *(start.node - 1) = allocate_node();
+                    *(start.node - i) = allocate_node();
             } catch(...) {
                 for (size_type j = 1; j < i; ++j)
                     deallocate_node(*(start.node - j));
@@ -527,7 +594,7 @@ namespace STL
             size_type i;
             try {
                 for (i = 1; i <= new_nodes; ++i)
-                    *(finish.node + 1) = allocate_node();
+                    *(finish.node + i) = allocate_node();
             } catch(...) {
                 for (size_type j = 1; j < i; ++j)
                     deallocate_node(*(finish.node - j));
@@ -703,7 +770,7 @@ namespace STL
                     } else {
                         ForwardIterator mid = first;
                         STL::advance(mid, elems_after);
-                        STL::uninitialized_copy(pos, finish, pos + n);
+                        STL::uninitialized_copy(pos, finish, new_finish - elems_after);
                         STL::uninitialized_copy(mid, last, finish);
                         finish = new_finish;
                         STL::copy(first, mid, pos);
@@ -794,6 +861,8 @@ namespace STL
             using category = typename STL::iterator_traits<InputIterator>::iterator_category;
             range_insert_aux(pos, first, last, category());
         }
+
+    protected:
 
         // 重新调整map的空间分配，可能会更换map
         void reallocate_map(size_type nodes_to_add, bool add_at_front)
@@ -894,6 +963,8 @@ namespace STL
         
         /** 
          *  @brief  移除deque所有元素
+         *
+         *  最终保留start所在buffer，但其内容已为空
          */ 
         void clear() noexcept 
         { erase_at_end(begin()); }
@@ -949,6 +1020,17 @@ namespace STL
         }
 
         /**
+         *  @brief  在pos前插入来自initializer_list的元素
+         *  @return  指向首个被插入元素的迭代器
+         */
+        iterator insert(const_iterator pos, std::initializer_list<value_type> l)
+        {
+            difference_type offset = pos - cbegin();
+            range_insert_aux(pos.M_const_cast(), l.begin(), l.end(), STL::random_access_iterator_tag());
+            return begin() + offset;
+        }
+
+        /**
          *  @brief  在pos前构造新元素
          *  @return  指向新增元素
          */ 
@@ -971,6 +1053,20 @@ namespace STL
             else 
                 return insert_aux(pos.M_const_cast(), std::forward<Args>(args)...);
         }
+
+        /**
+         *  @brief  移除位于pos的元素
+         *  @return  指向下一个元素的迭代器
+         */ 
+        iterator erase(const_iterator pos)
+        { return M_erase(pos.M_const_cast()); }
+
+        /**
+         *  @brief  移除范围[first, last)中的元素
+         *  @return  指向原来last所指元素的迭代器
+         */ 
+        iterator erase(const_iterator first, const_iterator last)
+        { return M_erase(first.M_const_cast(), last.M_const_cast()); }
 
         /**
          *  @brief  将x添加至deque尾部
@@ -1002,6 +1098,27 @@ namespace STL
                 ++finish.cur;
             } else 
                 push_back_aux(std::forward<Args>(args)...);
+        }
+
+        /**
+         *  @brief  移除deque最后一位元素
+         */ 
+        void pop_back() noexcept 
+        {
+            // 最后一个buffer有大于等于1个元素
+            if (finish.cur != finish.first) {
+                --finish.cur;
+                STL::destroy(finish.cur);
+            }
+            // 最后一个buffer没有元素
+            else {
+                deallocate_node(finish.first);  // 释放最后一个buffer
+                // 使finish指向上一个buffer的最后一个元素
+                finish.set_node(finish.node - 1);
+                finish.cur = finish.last - 1;
+                // 将该元素析构
+                STL::destroy(finish.cur);
+            }
         }
 
         /**
@@ -1037,6 +1154,26 @@ namespace STL
         }
         
         /**
+         *  @brief  移除deque第一位元素
+         */ 
+        void pop_front() noexcept 
+        {
+            // 第一个buffer有大于等于2个元素
+            if (start.cur != start.last - 1) {
+                STL::destroy(start.cur);
+                ++start.cur;
+            }
+            // 第一个buffer仅有1个元素
+            else {
+                STL::destroy(start.cur);    // 析构这唯一的元素
+                deallocate_node(start.first);  // 释放第一个buffer
+                // 使start指向下一个buffer的第一个元素
+                start.set_node(start.node + 1);
+                start.cur = finish.first;
+            }
+        }
+
+        /**
          *  @brief  重设deque大小以容纳new_size个元素
          *
          *  若当前大小小于new_size，则后附额外值为x的元素
@@ -1066,6 +1203,15 @@ namespace STL
         { swap_data(x); }
 
     };
+
+    template <class T, class Alloc>
+    inline bool operator==(const deque<T, Alloc>& x, const deque<T, Alloc>& y)
+    { return x.size() == y.size() && STL::equal(x.begin(), x.end(), y.begin()); }
+
+    template <class T, class Alloc>
+    inline bool operator!=(const deque<T, Alloc>& x, const deque<T, Alloc>& y)
+    { return !(x == y); }
+
 } /* namespace end */
 
 #endif

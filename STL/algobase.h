@@ -219,6 +219,9 @@ namespace STL
     inline BidirectionalIterator2 copy_backward(BidirectionalIterator1 first, BidirectionalIterator1 last, BidirectionalIterator2 result)
     { return _copy_backward<BidirectionalIterator1, BidirectionalIterator2>()(first, last, result); }
 
+    /**
+     *  @brief  判断[first1, last1)与[first2, first2 + (last1 - first1))中元素是否相等
+     */ 
     template <class IIt1, class IIt2>
     inline bool equal(IIt1 first1, IIt1 last1, IIt2 first2)
     {

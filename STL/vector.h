@@ -715,32 +715,13 @@ namespace STL
          *  @brief  和vector x交换数据内容
          */ 
         void swap(vector& x) 
-        {
-            swap_data(x);
-        }
+        { swap_data(x); }
 
-    public:
-        // 友元
-        template <class _T, class _Alloc>
-        friend bool operator==(const vector<_T, _Alloc>& x, const vector<_T, _Alloc>& y);
-
-        template <class _T, class _Alloc>
-        friend bool operator!=(const vector<_T, _Alloc>& x, const vector<_T, _Alloc>& y);
     };
 
     template <class T, class Alloc>
     bool operator==(const vector<T, Alloc>& x, const vector<T, Alloc>& y)
-    {
-        if (x.size() != y.size())
-            return false;
-        auto firstx = x.begin(), lastx = x.end();
-        auto firsty = y.begin(), lasty = y.end();
-        for ( ; firstx != lastx && firsty != lasty; ++firstx, ++firsty) {
-            if (*firstx != *firsty)
-                return false;
-        }
-        return true;
-    }
+    { return x.size() == y.size() && STL::equal(x.begin(), x.end(), y.begin()); }
 
     template <class T, class Alloc>
     bool operator!=(const vector<T, Alloc>& x, const vector<T, Alloc>& y)

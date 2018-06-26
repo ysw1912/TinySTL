@@ -185,17 +185,16 @@ void test_case6()
     assert(Container_Equal(v1, v2));
 }
 
-// 友元函数
+// 操作符
 void test_case7()
 {
     cout << "<test_case07>" << endl;
 
-    myVec<Widget> v1, v2;
+    myVec<Widget> v1, v2, v3;
     init_Widget_vector(v1); 
     init_Widget_vector(v2); 
-    Print(v1, v2);
     assert(v1 == v2);
-    assert(!(v1 != v2));
+    assert(v1 != v3);
 }
 
 void test_all_cases()

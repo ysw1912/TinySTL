@@ -120,108 +120,144 @@ void test_case4()
     assert(d.size() == 10);
     Print(d);
 }
-/*
-// push_back()、emplace_back()、emplace()、pop_back()
+
+// insert()、erase()、emplace()
 void test_case5()
 {
     cout << "<test_case05>" << endl;
 
-    myVec<Widget> v1;
-    stdVec<Widget> v2;
-    init_Widget_vector(v1);
-    init_Widget_vector(v2);
-    Print(v1, v2);
-    assert(Container_Equal(v1, v2));
+    myDeq<int> d1, d3;
+    stdDeq<int> d2, d4;
+    for (int i = 1; i <= 1000; ++i) {
+        d3.push_back(i);
+        d4.push_back(i);
+    }
+    assert(Container_Equal(d3, d4));
 
-    v1.push_back({12.3, "aaa"});    v1.emplace_back(45.6, "bbb"); 
-    v2.push_back({12.3, "aaa"});    v2.emplace_back(45.6, "bbb");
-    v1.emplace(v1.begin(), 0, "ysw");
-    v2.emplace(v2.begin(), 0, "ysw");
-    v1.pop_back();
-    v2.pop_back();
-    Print(v1, v2);
-    assert(Container_Equal(v1, v2));
+    // 4种insert()
+    d1.insert(d1.end(), 1);     d1.insert(d1.end(), 1, 2);
+    d2.insert(d2.end(), 1);     d2.insert(d2.end(), 1, 2);
+    d1.insert(d1.end(), {998, 999, 1000});
+    d2.insert(d2.end(), {998, 999, 1000});
+    d1.insert(d1.end() - 3, d3.begin() + 2, d3.end() - 3);
+    d2.insert(d2.end() - 3, d4.begin() + 2, d4.end() - 3);
+    
+    assert(Container_Equal(d1, d2));
+    assert(Container_Equal(d1, d3));
+
+    // 2种erase
+    d1.erase(d1.begin() + d1.size() / 2);
+    d2.erase(d2.begin() + d2.size() / 2);
+    d1.erase(d1.begin() + d1.size() / 4, d1.end());
+    d2.erase(d2.begin() + d2.size() / 4, d2.end());
+    assert(Container_Equal(d1, d2));
+
+    d1.emplace(d1.begin() + d1.size() / 2, 123456);
+    d2.emplace(d2.begin() + d2.size() / 2, 123456);
+    assert(Container_Equal(d1, d2));
 }
 
-// insert()、erase()
+// push_back()、emplace_back()、pop_back()
+// push_front()、emplace_front()、pop_front()
 void test_case6()
 {
     cout << "<test_case06>" << endl;
 
-    myVec<int> v1, v3;
-    stdVec<int> v2, v4;
-    for (int i = 1; i <= 1000; ++i) {
-        v3.push_back(i);
-        v4.push_back(i);
-    }
-    assert(Container_Equal(v3, v4));
+    myDeq<Widget> d1;
+    stdDeq<Widget> d2;
+    init_Widget_deque(d1);
+    init_Widget_deque(d2);
+    Print(d1, d2);
+    assert(Container_Equal(d1, d2));
 
-    // 4种insert()
-    v1.insert(v1.end(), 1);     v1.insert(v1.end(), 1, 2);
-    v2.insert(v2.end(), 1);     v2.insert(v2.end(), 1, 2);
-    v1.insert(v1.end(), {998, 999, 1000});
-    v2.insert(v2.end(), {998, 999, 1000});
-    v1.insert(v1.end() - 3, v3.begin() + 2, v3.end() - 3);
-    v2.insert(v2.end() - 3, v4.begin() + 2, v4.end() - 3);
-    
-    assert(Container_Equal(v1, v2));
-    assert(Container_Equal(v1, v3));
+    d1.push_back({12.3, "aaa"});
+    d2.push_back({12.3, "aaa"});
+    d1.emplace_back(0, "ysw");
+    d2.emplace_back(0, "ysw");
 
-    // 2种erase
-    v1.erase(v1.begin() + v1.size() / 2);
-    v2.erase(v2.begin() + v2.size() / 2);
-    v1.erase(v1.begin() + v1.size() / 4, v1.end());
-    v2.erase(v2.begin() + v2.size() / 4, v2.end());
-    assert(Container_Equal(v1, v2));
+    d1.push_front({45.6, "bbb"});
+    d2.push_front({45.6, "bbb"});
+    d1.emplace_front(99.9, "wayne");
+    d2.emplace_front(99.9, "wayne");
+
+    Print(d1, d2);
+    assert(Container_Equal(d1, d2));
+
+    d1.pop_back();
+    d2.pop_back();
+    d1.pop_front();
+    d2.pop_front();
+
+    Print(d1, d2);
+    assert(Container_Equal(d1, d2));
 }
 
-// 友元函数
+// 操作符
 void test_case7()
 {
     cout << "<test_case07>" << endl;
 
-    myVec<Widget> v1, v2;
-    init_Widget_vector(v1); 
-    init_Widget_vector(v2); 
-    Print(v1, v2);
-    assert(v1 == v2);
-    assert(!(v1 != v2));
+    myDeq<Widget> d1, d2, d3;
+    init_Widget_deque(d1); 
+    init_Widget_deque(d2); 
+    assert(d1 == d2);
+    assert(d1 != d3);
 }
-*/ 
+
 void test_all_cases()
 {
     test_case1();
     test_case2();
     test_case3();
     test_case4();
-//    test_case5();
-//    test_case6();
-//    test_case7();
+    test_case5();
+    test_case6();
+    test_case7();
 }
-/*
+
 // 性能测试
 void test_performance()
 {
     cout << "<test_performance>" << endl;
 
-    myVec<int> v1;
+    myDeq<int> d1;
     Profiler::Start();
-    for (int i = 0; i < 10000000; ++i)
-        v1.push_back(i);
+    for (int i = 0; i < 10000000; ++i) {
+        d1.push_front(i);
+        d1.push_back(i);
+    }
     Profiler::Finish();
     Profiler::dumpDuration();
     
-    stdVec<int> v2;
+    stdDeq<int> d2;
     Profiler::Start();
-    for (int i = 0; i < 10000000; ++i)
-        v2.push_back(i);
+    for (int i = 0; i < 10000000; ++i) {
+        d2.push_front(i);
+        d2.push_back(i);
+    }
+    Profiler::Finish();
+    Profiler::dumpDuration();
+    
+    Profiler::Start();
+    for (int i = 0; i < 10000000; ++i) {
+        d1.pop_front();
+        d1.pop_back();
+    }
+    Profiler::Finish();
+    Profiler::dumpDuration();
+    
+    Profiler::Start();
+    for (int i = 0; i < 10000000; ++i) {
+        d2.pop_front();
+        d2.pop_back();
+    }
     Profiler::Finish();
     Profiler::dumpDuration();
 }
-*/ 
+ 
 int main()
 {
     test_all_cases();
-   //  test_performance();
+    test_performance();
     return 0;
 }

@@ -760,13 +760,6 @@ namespace STL
             swap(tmp[fill - 1]);
         }
 
-    public:
-        // 比较符
-        template <class _T, class _Alloc>
-        friend bool operator==(const list<_T, _Alloc>& x, const list<_T, _Alloc>& y); 
-        
-        template <class _T, class _Alloc>
-        friend bool operator!=(const list<_T, _Alloc>& x, const list<_T, _Alloc>& y); 
     };
 
     template <class T, class Alloc>

@@ -25,12 +25,14 @@
 7. `list.h`
     - [链表排序](https://ysw1912.github.io/post/cc++/stl02/)
 
-8. 基于`tree.h`的`set.h`和`map.h`
+8. 基于`deque.h`的`stack.h`和`queue.h`
+
+9. 基于`tree.h`的`set.h`和`map.h`
     - [红黑树删除节点](https://ysw1912.github.io/post/cc++/stl01/)
 
-9. 基于`hashtable.h`的`unordered_set.h`和`unordered_map.h`
+10. 基于`hashtable.h`的`unordered_set.h`和`unordered_map.h`
 
-10. `algorithm.h`：泛型函数
+11. `algorithm.h`：泛型函数
 
 ### 测试模块
 
@@ -38,13 +40,13 @@
 
 2. `test_list.cpp`
 
-3. `test_tree.cpp`
+3. `test_deque.cpp`
 
-4. `test_hashtable.cpp`
+4. `test_tree.cpp`
+
+5. `test_hashtable.cpp`
 
 ### 待开发模块
 
-1. `deque.h`
-
-2. `heap.h`
+1. `heap.h`
 
