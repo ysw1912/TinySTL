@@ -259,7 +259,7 @@ namespace STL
         }
 
 
-        // 用value初始化[start, finish)的元素
+        // 用value初始化deque中[start, finish)的元素
         void fill_initialize(const value_type& value)
         {
             Map_pointer cur;
@@ -274,6 +274,8 @@ namespace STL
             }
         }
 
+        // 被initialize_dispatch(first, last, false_type)调用
+        // 用[first, last)元素初始化deque
         // input_iterator_tag版本
         template <class InputIterator>
         void range_initialize(InputIterator first, InputIterator last, STL::input_iterator_tag)
@@ -287,7 +289,7 @@ namespace STL
                 throw;
             }
         }
-
+        // forward_iterator_tag版本
         template <class ForwardIterator>
         void range_initialize(ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag)
         {
@@ -322,6 +324,15 @@ namespace STL
         {
             using category = typename STL::iterator_traits<InputIterator>::iterator_category;
             range_initialize(first, last, category());
+        }
+
+        // 交换deque数据
+        void swap_data(deque& x) noexcept 
+        {
+            STL::swap(start, x.start);
+            STL::swap(finish, x.finish);
+            STL::swap(map, x.map);
+            STL::swap(map_size, x.map_size);
         }
 
         // 析构[first, last)的元素
@@ -376,6 +387,46 @@ namespace STL
         }
 
         /**
+         *  @brief  move constructor
+         */ 
+        deque(deque&& x)
+        : map(), map_size(0), start(), finish()
+        {
+            initialize_map(0);
+            if (x.map)
+                swap_data(x);
+        }
+
+        /** 
+         *  @brief  copy assignment operator 
+         */ 
+        deque& operator=(const deque& x)
+        {
+            if (&x != this) {
+                const size_type len = size();
+                if (len >= x.size())
+                    erase_at_end(STL::copy(x.begin(), x.end(), start));
+                else {
+                    const_iterator mid = x.begin() + difference_type(len);
+                    STL::copy(x.begin(), mid, start);
+                    insert(finish, mid, x.end());
+                }
+            }
+            return *this;
+        }
+
+        /**
+         *  @brief  move assignment operator 
+         */ 
+        deque& operator=(deque&& x) 
+        {
+            deque tmp;
+            swap_data(tmp);
+            swap_data(x);
+            return *this;
+        }
+
+        /**
          *  @brief  destructor
          */ 
         ~deque()
@@ -383,12 +434,40 @@ namespace STL
 
     public:
         // 元素访问
-        reference operator[](size_type n)
+        reference operator[](size_type n) noexcept 
         { return start[difference_type(n)]; }
-        reference front() { return *start; }
-        reference back()
+
+        const_reference operator[](size_type n) const noexcept 
+        { return start[difference_type(n)]; }
+        
+        reference at(size_type n)
+        {
+            if (n >= size())
+                throw;
+            return (*this)[n];
+        }
+
+        const_reference at(size_type n) const 
+        {
+            if (n >= size())
+                throw;
+            return (*this)[n];
+        }
+
+        reference front() noexcept { return *start; }
+        
+        const_reference front() const noexcept { return *start; }
+        
+        reference back() noexcept 
         {
             iterator tmp = finish;
+            --tmp;
+            return *tmp;
+        }
+
+        const_reference back() const noexcept 
+        {
+            const_iterator tmp = end();
             --tmp;
             return *tmp;
         }
@@ -418,50 +497,394 @@ namespace STL
             finish = pos;
         }
         
-        // 重新调整map的空间分配
+        // 在deque前端留出new_elems个元素的空间
+        void new_elements_at_front(size_type new_elems)
+        {
+            if (max_size() - size() < new_elems)
+                throw;
+            // 预留map空间
+            const size_type new_nodes = (new_elems + buffer_size() - 1) / buffer_size();
+            reserve_map_at_front(new_nodes);
+            size_type i;
+            try {
+                for (i = 1; i <= new_nodes; ++i)
+                    *(start.node - 1) = allocate_node();
+            } catch(...) {
+                for (size_type j = 1; j < i; ++j)
+                    deallocate_node(*(start.node - j));
+                throw;
+            }
+        }
+
+        // 在deque尾端留出new_elems个元素的空间
+        void new_elements_at_back(size_type new_elems)
+        {
+            if (max_size() - size() < new_elems)
+                throw;
+            // 预留map空间
+            const size_type new_nodes = (new_elems + buffer_size() - 1) / buffer_size();
+            reserve_map_at_back(new_nodes);
+            size_type i;
+            try {
+                for (i = 1; i <= new_nodes; ++i)
+                    *(finish.node + 1) = allocate_node();
+            } catch(...) {
+                for (size_type j = 1; j < i; ++j)
+                    deallocate_node(*(finish.node - j));
+                throw;
+            }
+        }
+
+        // 在start前预留n个元素的空间
+        // 若第一个buffer头部剩余空间不够，则新增buffer
+        iterator reserve_elements_at_front(size_type n)
+        {
+            const size_type vacancies = start.cur - start.first;
+            if (n > vacancies)
+                new_elements_at_front(n - vacancies);
+            return start - difference_type(n);
+        }
+        
+        // 在start前预留n个元素的空间
+        // 若第一个buffer头部剩余空间不够，则新增buffer
+        iterator reserve_elements_at_back(size_type n)
+        {
+            const size_type vacancies = (finish.last - finish.cur) - 1;
+            if (n > vacancies)
+                new_elements_at_back(n - vacancies);
+            return finish + difference_type(n);
+        }
+
+        // 在pos前插入新元素，返回指向新插元素的迭代器
+        template <class... Args>
+        iterator insert_aux(iterator pos, Args&&... args)
+        {
+            value_type x_copy(std::forward<Args>(args)...);
+            // iterator::operator-算出插入点之前的元素个数
+            difference_type index = pos - start;
+            if (static_cast<size_type>(index) < size() / 2) {   // 插入点前元素较少
+                // 在deque最前端插入与第一个元素同值的元素
+                push_front(std::move(front()));
+                // 将pos前的元素前移
+                iterator front1 = start;
+                ++front1;
+                iterator front2 = front1;
+                ++front2;
+                pos = start + index;
+                iterator pos1 = pos;
+                ++pos1;
+                STL::copy(front2, pos1, front1);
+            } else {
+                // 在deque最尾端插入与最后一个元素同值的元素
+                push_back(std::move(back()));
+                // 将pos后的元素后移
+                iterator back1 = finish;
+                --back1;
+                iterator back2 = back1;
+                --back2;
+                pos = start + index;
+                STL::copy_backward(pos, back2, back1);
+            }
+            *pos = std::move(x_copy);
+            return pos;
+        }
+
+        // 被fill_insert(pos, n, x)调用
+        // 在pos前插入x的n个副本，插入点不在deque最前端或最尾端
+        void insert_aux(iterator pos, size_type n, const value_type& x)
+        {
+            // 插入点之前的元素个数
+            const difference_type elems_before = pos - start;
+            const size_type length = size();
+            value_type x_copy = x;
+            // 插入点之前元素较少，前移这部分元素
+            if (static_cast<size_type>(elems_before) < length / 2) {
+                // 前移前在deque头留出空间
+                iterator new_start = reserve_elements_at_front(n);
+                iterator old_start = start;
+                pos = start + elems_before;
+                try {
+                    // 插入点之前元素个数 大于等于 新增元素个数
+                    if (elems_before >= difference_type(n)) {
+                        iterator start_n = start + difference_type(n);
+                        STL::uninitialized_copy(start, start_n, new_start);
+                        start = new_start;
+                        STL::copy(start_n, pos, old_start);
+                        STL::fill(pos - difference_type(n), pos, x_copy);
+                    } else {
+                        STL::uninitialized_copy(start, pos, new_start);
+                        STL::uninitialized_fill(new_start + elems_before, start, x_copy);
+                        start = new_start;
+                        STL::fill(old_start, pos, x_copy);
+                    }
+                } catch(...) {
+                    destroy_nodes(new_start.node, start.node);
+                    throw;
+                }
+            }
+            // 插入点之后元素较少，后移这部分元素
+            else {
+                // 后移前在deque尾留出空间
+                iterator new_finish = reserve_elements_at_back(n);
+                iterator old_finish = finish;
+                const difference_type elems_after = difference_type(length) - elems_before;
+                pos = finish - elems_after;
+                try {
+                    // 插入点之后元素个数 大于等于 新增元素个数
+                    if (elems_after >= difference_type(n)) {
+                        iterator finish_n = finish - difference_type(n);
+                        STL::uninitialized_copy(finish_n, finish, finish);
+                        finish = new_finish;
+                        STL::copy_backward(pos, finish_n, old_finish);
+                        STL::fill(pos, pos + difference_type(n), x_copy);
+                    } else {
+                        STL::uninitialized_copy(pos, finish, pos + n);
+                        STL::uninitialized_fill(finish, pos + n, x_copy);
+                        finish = new_finish;
+                        STL::fill(pos, old_finish, x_copy);
+                    }
+                } catch(...) {
+                    destroy_nodes(finish.node + 1, new_finish.node + 1);
+                    throw;
+                }
+            }
+        }
+
+        // 被range_insert_aux(pos, first, last, forward_iterator_tag)调用
+        // 在pos前插入来自[first, last)的元素，插入点不在deque最前端或最尾端
+        template <class ForwardIterator>
+        void insert_aux(iterator pos, ForwardIterator first, ForwardIterator last, size_type n)
+        {
+            // 插入点之前的元素个数
+            const difference_type elems_before = pos - start;
+            const size_type length = size();
+            // 插入点之前元素较少，前移这部分元素
+            if (static_cast<size_type>(elems_before) < length / 2) {
+                // 前移前在deque头留出空间
+                iterator new_start = reserve_elements_at_front(n);
+                iterator old_start = start;
+                pos = start + elems_before;
+                try {
+                    // 插入点之前元素个数 大于等于 新增元素个数
+                    if (elems_before >= difference_type(n)) {
+                        iterator start_n = start + difference_type(n);
+                        STL::uninitialized_copy(start, start_n, new_start);
+                        start = new_start;
+                        STL::copy(start_n, pos, old_start);
+                        STL::copy(first, last, pos - difference_type(n));
+                    } else {
+                        ForwardIterator mid = first;
+                        STL::advance(mid, difference_type(n) - elems_before);
+                        STL::uninitialized_copy(start, pos, new_start);
+                        STL::uninitialized_copy(first, mid, new_start + elems_before);
+                        start = new_start;
+                        STL::copy(mid, last, old_start);
+                    }
+                } catch(...) {
+                    destroy_nodes(new_start.node, start.node);
+                    throw;
+                }
+            }
+            // 插入点之后元素较少，后移这部分元素
+            else {
+                // 后移前在deque尾留出空间
+                iterator new_finish = reserve_elements_at_back(n);
+                iterator old_finish = finish;
+                const difference_type elems_after = difference_type(length) - elems_before;
+                pos = finish - elems_after;
+                try {
+                    // 插入点之后元素个数 大于等于 新增元素个数
+                    if (elems_after >= difference_type(n)) {
+                        iterator finish_n = finish - difference_type(n);
+                        STL::uninitialized_copy(finish_n, finish, finish);
+                        finish = new_finish;
+                        STL::copy_backward(pos, finish_n, old_finish);
+                        STL::copy(first, last, pos);
+                    } else {
+                        ForwardIterator mid = first;
+                        STL::advance(mid, elems_after);
+                        STL::uninitialized_copy(pos, finish, pos + n);
+                        STL::uninitialized_copy(mid, last, finish);
+                        finish = new_finish;
+                        STL::copy(first, mid, pos);
+                    }
+                } catch(...) {
+                    destroy_nodes(finish.node + 1, new_finish.node + 1);
+                    throw;
+                }
+            }
+        }
+        
+        // 在pos前插入x的n个副本
+        void fill_insert(iterator pos, size_type n, const value_type& x)
+        {
+            // 若插入点是deque最前端
+            if (pos.cur == start.cur) {
+                iterator new_start = reserve_elements_at_front(n);
+                try {
+                    STL::uninitialized_fill(new_start, start, x);
+                    start = new_start;
+                } catch(...) {
+                    destroy_nodes(new_start.node, start.node);
+                    throw;
+                }
+            }
+            // 若插入点是deque最尾端
+            else if (pos.cur == finish.cur) {
+                iterator new_finish = reserve_elements_at_back(n);
+                try {
+                    STL::uninitialized_fill(finish, new_finish, x);
+                    finish = new_finish;
+                } catch(...) {
+                    destroy_nodes(finish.node + 1, new_finish.node + 1);
+                    throw;
+                }
+            }
+            else    // 交给insert_aux(pos, n, x) 
+                insert_aux(pos, n, x);
+        } 
+
+        // 被insert_dispatch(pos, first, last, false_type)调用
+        // 在pos前插入来自范围[first, last)的元素
+        // input_iterator_tag版本
+        template <class InputIterator>
+        void range_insert_aux(iterator pos, InputIterator first, InputIterator last, STL::input_iterator_tag)
+        {
+            for (; first != last; ++first)
+                emplace(pos, *first);
+        }
+        // forward_iterator_tag版本
+        template <class ForwardIterator>
+        void range_insert_aux(iterator pos, ForwardIterator first, ForwardIterator last, STL::forward_iterator_tag)
+        {
+            const size_type n = STL::distance(first, last);
+            if (pos.cur == start.cur) {
+                iterator new_start = reserve_elements_at_front(n);
+                try {
+                    STL::uninitialized_copy(first, last, new_start);
+                    start = new_start;
+                } catch(...) {
+                    destroy_nodes(new_start.node, start.node);
+                    throw;
+                }
+            }
+            else if (pos.cur == finish.cur) {
+                iterator new_finish = reserve_elements_at_back(n);
+                try {
+                    STL::uninitialized_copy(first, last, finish);
+                    finish = new_finish;
+                } catch(...) {
+                    destroy_nodes(finish.node + 1, new_finish.node + 1);
+                    throw;
+                }
+            }
+            else 
+                insert_aux(pos, first, last, n);
+        }
+        
+        // 被insert(cpos, first, last)调用
+        // first, last是integral的情况
+        template <class Integer>
+        void insert_dispatch(iterator pos, Integer n, Integer x, std::true_type)
+        { fill_insert(pos, n, x); }
+        // first, last是iterator的情况
+        template <class InputIterator>
+        void insert_dispatch(iterator pos, InputIterator first, InputIterator last, std::false_type)
+        {
+            using category = typename STL::iterator_traits<InputIterator>::iterator_category;
+            range_insert_aux(pos, first, last, category());
+        }
+
+        // 重新调整map的空间分配，可能会更换map
         void reallocate_map(size_type nodes_to_add, bool add_at_front)
         {
-            const size_type old_num_nodes = finish.node + 1 - start.node;
+            const size_type old_num_nodes = finish.node - start.node + 1;
             const size_type new_num_nodes = old_num_nodes + nodes_to_add;
+            
             Map_pointer new_nstart;
-            if (map_size > 2 * new_num_nodes) { // map_size足够
+            // map_size足够大
+            if (map_size > 2 * new_num_nodes) {
+                // 在map前端或尾端多留出nodes_to_add个空间
                 new_nstart = map + (map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+                // 将map内元素后移/前移
                 if (new_nstart < start.node)
                     STL::copy(start.node, finish.node + 1, new_nstart);
                 else 
                     STL::copy_backward(start.node, finish.node + 1, new_nstart + old_num_nodes);
-            } else {    // 重新分配更大的map
+            }
+            // map_size不够，需要重新分配更大的空间给map
+            else {
                 size_type new_map_size = map_size + std::max(map_size, nodes_to_add) + 2;
                 Map_pointer new_map = allocate_map(new_map_size);
                 new_nstart = new_map + (new_map_size - new_num_nodes) / 2 + (add_at_front ? nodes_to_add : 0);
+                // 拷贝原map
                 STL::copy(start.node, finish.node + 1, new_nstart);
+                // 释放原map
                 deallocate_map(map, map_size);
+                // 设置新map起始地址与大小
                 map = new_map;
                 map_size = new_map_size;
             }
+            // 重设start和finish迭代器
             start.set_node(new_nstart);
             finish.set_node(new_nstart + old_num_nodes - 1);
         }
 
-        // 
+        // 根据deque的map尾部剩余空间重新分配map 
         void reserve_map_at_back(size_type nodes_to_add = 1)
         {
+            // 若map尾部无备用空间
             if (nodes_to_add + 1 > map_size - (finish.node - map))
                 reallocate_map(nodes_to_add, false);
         }
 
+        // 根据deque的map前端剩余空间重新分配map 
+        void reserve_map_at_front(size_type nodes_to_add = 1)
+        {
+            // 若map前端无备用空间
+            if (nodes_to_add > size_type(start.node - map))
+                reallocate_map(nodes_to_add, true);
+        }
+
         // 仅当finish.cur == finish.last - 1时调用
+        // 即最后一个buffer尾端只有1个备用空间
         template <class... Args>
         void push_back_aux(Args&&... args)
         {
+            // 若符合条件则修改map
             reserve_map_at_back();
+            // 配置一个新buffer至deque尾部
             *(finish.node + 1) = allocate_node();
             try {
+                // 在倒数第二个buffer的最后位置构造新增值
                 STL::construct(finish.cur, std::forward<Args>(args)...);
+                // 将finish指向最后一个buffer的第一个元素前
                 finish.set_node(finish.node + 1);
                 finish.cur = finish.first;
             } catch(...) {
                 deallocate_node(*(finish.node + 1));
+                throw;
+            }
+        }
+
+        // 仅当start.cur == start.first时调用
+        // 即第一个buffer前端没有备用空间
+        template <class... Args>
+        void push_front_aux(Args&&... args)
+        {
+            // 若符合条件则修改map
+            reserve_map_at_front();
+            // 配置一个新buffer至deque开头
+            *(start.node - 1) = allocate_node();
+            try {
+                // 将start指向最后一个buffer的最后一个元素前
+                start.set_node(start.node - 1);
+                start.cur = start.last - 1;
+                // 在第一个buffer的最后位置构造新增值
+                STL::construct(start.cur, std::forward<Args>(args)...);
+            } catch(...) {
+                ++start;
+                deallocate_node(*(start.node - 1));
                 throw;
             }
         }
@@ -476,7 +899,100 @@ namespace STL
         { erase_at_end(begin()); }
 
         /**
-         *  @brief  在deque尾构造新元素
+         *  @brief  在pos前插入x
+         *  @return  被插入x的迭代器
+         */ 
+        iterator insert(const_iterator pos, const value_type& x)
+        {
+            // 若插入点是deque最前端
+            if (pos.cur == start.cur) {
+                push_front(x);
+                return start;
+            }
+            // 若插入点是deque最尾端
+            else if (pos.cur == finish.cur) {
+                push_back(x);
+                iterator tmp = finish;
+                --tmp;
+                return tmp;
+            }
+            // 交给insert_aux(pos, x)
+            else 
+                return insert_aux(pos.M_const_cast(), x);
+        }
+
+        iterator insert(const_iterator pos, value_type&& x)
+        { return emplace(pos, std::move(x)); }
+
+        /**
+         *  @brief  在pos前插入x的n个副本
+         *  @return  指向首个被插入元素的迭代器
+         */ 
+        iterator insert(const_iterator pos, size_type n, const value_type& x)
+        {
+            difference_type offset = pos - cbegin();
+            fill_insert(pos.M_const_cast(), n, x);
+            return begin() + offset;
+        }
+
+        /**
+         *  @brief  在pos前插入来自范围[first, last)的元素
+         *  @return  指向首个被插入元素的迭代器
+         */ 
+        template <class InputIterator>
+        iterator insert(const_iterator pos, InputIterator first, InputIterator last)
+        {
+            difference_type offset = pos - cbegin();
+            using is_integral = typename std::is_integral<InputIterator>::type;
+            insert_dispatch(pos.M_const_cast(), first, last, is_integral());
+            return begin() + offset;
+        }
+
+        /**
+         *  @brief  在pos前构造新元素
+         *  @return  指向新增元素
+         */ 
+        template <class... Args>
+        iterator emplace(const_iterator pos, Args&&... args)
+        {
+            // 若插入点是deque最前端
+            if (pos.cur == start.cur) {
+                emplace_front(std::forward<Args>(args)...);
+                return start;
+            }
+            // 若插入点是deque最尾端
+            else if (pos.cur == finish.cur) {
+                emplace_back(std::forward<Args>(args)...);
+                iterator tmp = finish;
+                --tmp;
+                return tmp;
+            }
+            // 交给insert_aux()
+            else 
+                return insert_aux(pos.M_const_cast(), std::forward<Args>(args)...);
+        }
+
+        /**
+         *  @brief  将x添加至deque尾部
+         */ 
+        void push_back(const value_type& x)
+        {
+            // 最后一个buffer尾端有大于1个备用空间
+            if (finish.cur != finish.last - 1) {
+                STL::construct(finish.cur, x);
+                ++finish.cur;
+            } else  // 最后一个buffer尾端只有1个备用空间
+                push_back_aux(x);
+        }
+
+        /**
+         *  @brief  将x移动至deque尾部
+         */ 
+        void push_back(value_type&& x)
+        { emplace_back(std::move(x)); }
+
+        /**
+         *  @brief  在deque尾部构造新元素
          */ 
         template <class... Args>
         void emplace_back(Args&&... args)
@@ -488,6 +1004,66 @@ namespace STL
                 push_back_aux(std::forward<Args>(args)...);
         }
 
+        /**
+         *  @brief  将x添加至deque头部
+         */ 
+        void push_front(const value_type& x)
+        {
+            // 第一个buffer前端有备用空间
+            if (start.cur != start.first) {
+                STL::construct(start.cur - 1, x);
+                --start.cur;
+            } else  // 第一个buffer前端没有备用空间
+                push_front_aux(x);
+        }
+
+        /**
+         *  @brief  将x移动至deque头部
+         */ 
+        void push_front(value_type&& x)
+        { emplace_front(std::move(x)); }
+
+        /**
+         *  @brief  在deque头部构造新元素
+         */ 
+        template <class... Args>
+        void emplace_front(Args&&... args)
+        {
+            if (start.cur != start.first) {
+                STL::construct(start.cur - 1, std::forward<Args>(args)...);
+                --start.cur;
+            } else 
+                push_front_aux(std::forward<Args>(args)...);
+        }
+        
+        /**
+         *  @brief  重设deque大小以容纳new_size个元素
+         *
+         *  若当前大小小于new_size，则后附额外值为x的元素
+         */ 
+        void resize(size_type new_size)
+        {
+            const size_type len = size();
+            if (new_size > len)
+                insert(finish, new_size - len, value_type());
+            else if (new_size < len)
+                erase_at_end(start + difference_type(new_size));
+        }
+
+        void resize(size_type new_size, const value_type& x)
+        {
+            const size_type len = size();
+            if (new_size > len)
+                insert(finish, new_size - len, x);
+            else if (new_size < len)
+                erase_at_end(start + difference_type(new_size));
+        }
+
+        /**
+         *  @brief  与deque x交换内容
+         */ 
+        void swap(deque& x)
+        { swap_data(x); }
 
     };
 } /* namespace end */

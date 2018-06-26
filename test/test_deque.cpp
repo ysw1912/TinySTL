@@ -15,18 +15,17 @@ using stdDeq = std::deque<T>;
 
 template <class T>
 using myDeq = STL::deque<T>;
-/*
+
 template <class Container>
-void init_Widget_vector(Container& v)
+void init_Widget_deque(Container& d)
 {
-    v.clear();
+    d.clear();
     for (int i = 1; i <= 4; ++i) {
-        v.emplace_back(i * 0.5, string(i, i + '0'));
+        d.emplace_back(i * 0.5, string(i, i + '0'));
     }
 }
-*/ 
 
-// 构造/拷贝构造/移动构造/赋值函数、拷贝/移动赋值操作符
+// 构造/拷贝构造/移动构造函数、拷贝/移动赋值操作符
 void test_case1()
 {
     cout << "<test_case01>" << endl;
@@ -40,46 +39,40 @@ void test_case1()
     myDeq<string> d4(d3.begin(), d3.end());
     Print(d3, d4);
     assert(Container_Equal(d3, d4));
-    /*
-    myVec<string> v5(v3);
-    myVec<string> v6(v4);
-    assert(Container_Equal(v5, v6));
 
-    myVec<string> v7(std::move(v3));
-    myVec<string> v8(std::move(v4));
-    Print(v3, v4);
-    assert(Container_Equal(v7, v8));
+    myDeq<string> d5(d3);
+    myDeq<string> d6(d4);
+    assert(Container_Equal(d5, d6));
 
-    v3 = v7;              
-    v4 = std::move(v8);   
-    Print(v3, v4);
-    assert(Container_Equal(v3, v4));
-
-    v3.assign(5, "ysw");  
-    v4.assign(v3.begin(), v3.end());
-    Print(v3, v4);
-    assert(Container_Equal(v3, v4));
-    */
+    myDeq<string> d7(std::move(d3));
+    myDeq<string> d8(std::move(d4));
+    Print(d3, d4);
+    assert(Container_Equal(d7, d8));
+    
+    d3 = d7;              
+    d4 = std::move(d8);   
+    Print(d3, d4);
+    assert(Container_Equal(d3, d4));
 }
-/*
+
 // 元素访问
 void test_case2()
 {
     cout << "<test_case02>" << endl;
 
-    myVec<Widget> v1;
-    stdVec<Widget> v2;
-    init_Widget_vector(v1); 
-    init_Widget_vector(v2); 
-    Print(v1, v2);
-    assert(Container_Equal(v1, v2));  
+    myDeq<Widget> d1;
+    stdDeq<Widget> d2;
+    init_Widget_deque(d1); 
+    init_Widget_deque(d2); 
+    Print(d1, d2);
+    assert(Container_Equal(d1, d2));  
     
-    v1.front() = v2.front() = {12.3, "aaa"};
-    v1[1] = v2[1] = {45.6, "bbb"};
-    v1.at(2) = v2.at(2) = {78.9, "ccc"};
-    v1.back() = v2.back() = {0, "ysw"};
-    Print(v1, v2);
-    assert(Container_Equal(v1, v2));  
+    d1.front() = d2.front() = {12.3, "aaa"};
+    d1[1] = d2[1] = {45.6, "bbb"};
+    d1.at(2) = d2.at(2) = {78.9, "ccc"};
+    d1.back() = d2.back() = {0, "ysw"};
+    Print(d1, d2);
+    assert(Container_Equal(d1, d2));  
 }
 
 // 迭代器
@@ -87,21 +80,21 @@ void test_case3()
 {
     cout << "<test_case03>" << endl;
 
-    myVec<int> v;
+    myDeq<int> d;
     int i;
     for (i = 0; i < 1000; ++i)
-        v.push_back(i);
+        d.push_back(i);
     
     i = 0;
-    for (myVec<int>::iterator it = v.begin(); it != v.end(); ++it, ++i) {
+    for (myDeq<int>::iterator it = d.begin(); it != d.end(); ++it, ++i) {
         assert(*it == i);
         *it = i * 2;
     }
     
     --i;
-    for (myVec<int>::const_iterator cit = v.cend() - 1; ; --cit, --i) {
+    for (myDeq<int>::const_iterator cit = d.cend() - 1; ; --cit, --i) {
         assert(*cit == i * 2);
-        if (cit == v.cbegin())  break;
+        if (cit == d.cbegin())  break;
     }
 }
 
@@ -110,29 +103,24 @@ void test_case4()
 {
     cout << "<test_case04>" << endl;
 
-    myVec<int> v(100);
-    assert(v.size() == 100);
-    assert(v.capacity() == 100);
+    myDeq<int> d(100);
+    assert(d.size() == 100);
     
-    v.push_back(0);
-    assert(v.size() == 101);
-    assert(v.capacity() == 200);
+    d.push_back(0);
+    assert(d.size() == 101);
 
-    v.resize(5);
-    assert(v.size() == 5);
-    assert(v.capacity() == 200);
+    d.resize(5);
+    assert(d.size() == 5);
 
-    v.clear();
-    assert(v.empty());
-    assert(v.size() == 0);
-    assert(v.capacity() == 200);
+    d.clear();
+    assert(d.empty());
+    assert(d.size() == 0);
 
-    v.reserve(10);
-    assert(v.capacity() == 200);
-    v.reserve(250);
-    assert(v.capacity() == 250);
+    d.resize(10, 6);
+    assert(d.size() == 10);
+    Print(d);
 }
-
+/*
 // push_back()、emplace_back()、emplace()、pop_back()
 void test_case5()
 {
@@ -203,9 +191,9 @@ void test_case7()
 void test_all_cases()
 {
     test_case1();
-  //  test_case2();
- //   test_case3();
- //   test_case4();
+    test_case2();
+    test_case3();
+    test_case4();
 //    test_case5();
 //    test_case6();
 //    test_case7();
