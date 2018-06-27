@@ -5,8 +5,10 @@
     > Created Time: 2018-05-22
 *************************************************************************/
 #include <deque>
-
 #include "../STL/deque.h"
+#include "../STL/stack.h"
+#include "../STL/queue.h"
+#include "../STL/list.h"
 #include "profiler.h"
 #include "test_util.h"
 
@@ -204,6 +206,46 @@ void test_case7()
     assert(d1 != d3);
 }
 
+// stack
+void test_case8()
+{
+    cout << "<test_case08>" << endl;
+
+    STL::stack<int> st1, st2;
+    st1.push(1);
+    st1.push(2);
+    assert(st1 != st2);
+    cout << st1.top() << endl;   st1.pop();
+    cout << st1.top() << endl;   st1.pop();
+    assert(st1 == st2);
+
+    STL::stack<int, STL::list<int>> st3;
+    st3.push(1);
+    st3.push(2);
+    cout << st3.top() << endl;   st3.pop();
+    cout << st3.top() << endl;   st3.pop();
+}
+
+// queue
+void test_case9()
+{
+    cout << "<test_case09>" << endl;
+
+    STL::queue<int> q1, q2;
+    q1.push(1);
+    q1.push(2);
+    assert(q1 != q2);
+    cout << q1.front() << endl;   q1.pop();
+    cout << q1.front() << endl;   q1.pop();
+    assert(q1 == q2);
+
+    STL::queue<int, STL::list<int>> q3;
+    q3.push(1);
+    q3.push(2);
+    cout << q3.front() << endl;   q3.pop();
+    cout << q3.front() << endl;   q3.pop();
+}
+
 void test_all_cases()
 {
     test_case1();
@@ -212,7 +254,9 @@ void test_all_cases()
     test_case4();
     test_case5();
     test_case6();
-    test_case7();
+    test_case7(); 
+    test_case8();
+    test_case9();
 }
 
 // 性能测试

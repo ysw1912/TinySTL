@@ -154,7 +154,6 @@ namespace STL
         using const_reference           = const T&;
         using iterator                  = list_iterator<T>;
         using const_iterator            = list_const_iterator<T>;
-        // using const_reverse_iterator    = size_t;
         using size_type                 = size_t;
         using difference_type           = ptrdiff_t;
 
