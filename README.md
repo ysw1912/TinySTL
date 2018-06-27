@@ -11,6 +11,8 @@
 ### 功能模块
 
 1. `allocator.h`：空间分配器，包括 malloc_alloc 和 pool_alloc
+    - malloc_alloc 直接使用 malloc() 分配内存
+    - pool_alloc 使用基于 free-list 的内存池实现，容器缺省使用 pool_alloc 分配内存
 
 2. `construct.h`：标准构造/析构函数
 
@@ -27,12 +29,14 @@
 
 8. 基于`deque.h`的`stack.h`和`queue.h`
 
-9. 基于`tree.h`的`set.h`和`map.h`
+9. `heap.h`
+
+10. 基于`tree.h`的`set.h`和`map.h`
     - [红黑树删除节点](https://ysw1912.github.io/post/cc++/stl01/)
 
-10. 基于`hashtable.h`的`unordered_set.h`和`unordered_map.h`
+11. 基于`hashtable.h`的`unordered_set.h`和`unordered_map.h`
 
-11. `algorithm.h`：泛型函数
+12. `algorithm.h`：泛型函数
 
 ### 测试模块
 
@@ -42,11 +46,15 @@
 
 3. `test_deque.cpp`
 
-4. `test_tree.cpp`
+4. `test_heap.cpp`
 
-5. `test_hashtable.cpp`
+5. `test_tree.cpp`
+
+6. `test_hashtable.cpp`
+
+&emsp;&emsp;测试包括容器的所有成员函数测试以及主要接口的效率测试，发现自己重写的 TinySTL 容器效率要比 gcc 5.4.0 的 libstdc++ 版本里的容器好上一些。
 
 ### 待开发模块
 
-1. `heap.h`
+1. `algorithm.h`中的一系列算法待补完
 
