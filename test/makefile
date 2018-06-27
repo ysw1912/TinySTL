@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -std=c++11 -Wall -g
 
-all: test_vector test_list test_deque test_tree test_hashtable
+all: test_vector test_list test_deque test_heap test_tree test_hashtable
 
 test_vector: test_vector.cpp profiler.o 
 	$(CC) $(CFLAGS) test_vector.cpp profiler.o -o test_vector 
@@ -11,6 +11,9 @@ test_list: test_list.cpp profiler.o
 
 test_deque: test_deque.cpp profiler.o
 	$(CC) $(CFLAGS) test_deque.cpp profiler.o -o test_deque 
+
+test_heap: test_heap.cpp profiler.o
+	$(CC) $(CFLAGS) test_heap.cpp profiler.o -o test_heap 
 
 test_tree: test_tree.cpp profiler.o
 	$(CC) $(CFLAGS) test_tree.cpp profiler.o -o test_tree 
@@ -22,5 +25,5 @@ profiler.o: profiler.cpp
 	$(CC) $(CFLAGS) -c profiler.cpp 
 
 clean:
-	rm profiler.o test_vector test_list test_deque \
+	rm profiler.o test_vector test_list test_deque test_heap \
 	   test_tree test_hashtable 

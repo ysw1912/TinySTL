@@ -2,6 +2,7 @@
 #define TINYSTL_QUEUE_H_ 
 
 #include "deque.h"
+#include "heap.h"
 #include "vector.h"
 
 namespace STL 
@@ -98,6 +99,97 @@ namespace STL
 
     public:
         // The big five
+        
+        /**
+         *  @brief  constructor
+         */
+        explicit priority_queue(const Compare& _cmp, const Sequence& _c)
+        : c(_c), cmp(_cmp)
+        { STL::make_heap(c.begin(), c.end(), cmp); }
+
+        explicit priority_queue(const Compare& _cmp = Compare(), Sequence&& _c = Sequence())
+        : c(std::move(_c)), cmp(_cmp)
+        { STL::make_heap(c.begin(), c.end(), cmp); }
+
+        template <class InputIterator>
+        priority_queue(InputIterator first, InputIterator last, 
+                       const Compare& _cmp, const Sequence& _c)
+        : c(_c), cmp(_cmp)
+        {
+            c.insert(c.end(), first, last);
+            STL::make_heap(c.begin(), c.end(), cmp);
+        }
+
+        template <class InputIterator>
+        priority_queue(InputIterator first, InputIterator last, 
+                       const Compare& _cmp = Compare(), Sequence&& _c = Sequence())
+        : c(std::move(_c)), cmp(_cmp)
+        {
+            c.insert(c.end(), first, last);
+            STL::make_heap(c.begin(), c.end(), cmp);
+        }
+        
+    public:
+        // 元素访问
+        const_reference top() const { return c.front(); }
+
+    public:
+        // 容量
+        bool empty() const { return c.empty(); }
+        size_type size() const { return c.size(); }
+
+    public:
+        // 修改器
+        void push(const value_type& x)
+        {
+            try {
+                c.push_back(x);
+                STL::push_heap(c.begin(), c.end(), cmp);
+            } catch(...) {
+                c.clear();
+                throw;
+            }
+        }
+
+        void push(value_type&& x)
+        {
+            try {
+                c.push_back(std::move(x));
+                STL::push_heap(c.begin(), c.end(), cmp);
+            } catch(...) {
+                c.clear();
+                throw;
+            }
+        }
+
+        template <class... Args>
+        void emplace(Args&&... args)
+        {
+            try {
+                c.emplace_back(std::forward<Args>(args)...);
+                STL::push_heap(c.begin(), c.end(), cmp);
+            } catch(...) {
+                c.clear();
+                throw;
+            }
+        }
+
+        void pop()
+        {
+            try {
+                STL::pop_heap(c.begin(), c.end(), cmp);
+                c.pop_back();
+            } catch(...) {
+                c.clear();
+                throw;
+            }
+        }
+
+        void swap(priority_queue& pq)
+        {
+            c.swap(pq.c);
+            STL::swap(cmp, pq.cmp);
+        }
 
     };
 

@@ -770,8 +770,8 @@ namespace STL
          */
         key_equal key_eq() const { return equal; }
 
-    public:
-        // 比较符
+    private:
+        // 友元比较符
         template <class _Value, class _Key, class _HashFcn, class _ExtractKey, class _Equal, class _Alloc>
         friend bool operator==(const hashtable<_Value, _Key, _HashFcn, _ExtractKey, _Equal, _Alloc>& x,
                                const hashtable<_Value, _Key, _HashFcn, _ExtractKey, _Equal, _Alloc>& y);
